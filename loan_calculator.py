@@ -1,6 +1,6 @@
 import streamlit as st
-from .financial_utils import calculate_loan_payment
-from .ui_components import format_currency, format_percentage
+from financial_utils import calculate_loan_payment
+from ui_components import format_currency, format_percentage
 
 def render_loan_section():
     """Render loan calculator section"""
