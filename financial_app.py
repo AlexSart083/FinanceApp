@@ -143,7 +143,7 @@ with st.expander("📊 Calcolatore Professionale Obbligazioni (con Data Emission
         
         # First coupon date (can be different from regular schedule)
         first_coupon_date = st.date_input(
-            "🎯 Prima Data Cedola", 
+            "🎯 Data Primo Pagamento Interessi", 
             value=issue_date + relativedelta(months=6),
             key="prof_bond_first_coupon"
         )
@@ -195,7 +195,7 @@ with st.expander("📊 Calcolatore Professionale Obbligazioni (con Data Emission
                 st.stop()
             
             if first_coupon_date <= issue_date:
-                st.error("❌ La prima data cedola deve essere successiva alla data di emissione!")
+                st.error("❌ La data primo pagamento interessi deve essere successiva alla data di emissione!")
                 st.stop()
                 
             if maturity_date <= purchase_date:
@@ -213,9 +213,31 @@ with st.expander("📊 Calcolatore Professionale Obbligazioni (con Data Emission
             last_coupon, next_coupon = find_last_coupon_before_purchase(coupon_dates, purchase_date)
             
             # Calculate precise accrued interest
-            accrued_interest = calculate_precise_accrued_interest(
-                nominal_value, coupon_rate, last_coupon, purchase_date, next_coupon
-            )
+            if last_coupon:  # Only if there was a previous coupon payment
+                accrued_interest = calculate_precise_accrued_interest(
+                    nominal_value, coupon_rate, last_coupon, purchase_date, next_coupon
+                )
+            else:
+                # If no coupon has been paid yet, calculate from issue date
+                if purchase_date > issue_date:
+                    # Calculate accrued interest from issue date to purchase date
+                    days_since_issue = (purchase_date - issue_date).days
+                    days_to_first_coupon = (first_coupon_date - issue_date).days
+                    
+                    # Determine coupon amount for the first period
+                    annual_coupon = nominal_value * (coupon_rate / 100)
+                    months_to_first_coupon = (first_coupon_date.year - issue_date.year) * 12 + (first_coupon_date.month - issue_date.month)
+                    
+                    if months_to_first_coupon <= 3:
+                        first_coupon_amount = annual_coupon / 4
+                    elif months_to_first_coupon <= 6:
+                        first_coupon_amount = annual_coupon / 2
+                    else:
+                        first_coupon_amount = annual_coupon
+                    
+                    accrued_interest = first_coupon_amount * (days_since_issue / days_to_first_coupon)
+                else:
+                    accrued_interest = 0
             
             # Calculate dirty price
             dirty_price = purchase_price + accrued_interest
@@ -262,13 +284,17 @@ with st.expander("📊 Calcolatore Professionale Obbligazioni (con Data Emission
             with res_col1:
                 st.write("**📅 Analisi Date e Ciclo Cedolare:**")
                 st.write(f"• Data Emissione: {issue_date.strftime('%d/%m/%Y')}")
-                st.write(f"• Prima Cedola: {first_coupon_date.strftime('%d/%m/%Y')}")
+                st.write(f"• Primo Pagamento Interessi: {first_coupon_date.strftime('%d/%m/%Y')}")
                 st.write(f"• Data Acquisto: {purchase_date.strftime('%d/%m/%Y')}")
                 st.write(f"• Data Scadenza: {maturity_date.strftime('%d/%m/%Y')}")
-                if last_coupon:
-                    st.write(f"• Ultima Cedola Pagata: {last_coupon.strftime('%d/%m/%Y')}")
-                if next_coupon:
-                    st.write(f"• Prossima Cedola: {next_coupon.strftime('%d/%m/%Y')}")
+            if last_coupon:
+                st.write(f"• Ultimo Pagamento Cedola: {last_coupon.strftime('%d/%m/%Y')}")
+            else:
+                st.write("• **Nessuna cedola ancora pagata**")
+            if next_coupon:
+                st.write(f"• Prossima Cedola: {next_coupon.strftime('%d/%m/%Y')}")
+            else:
+                st.write(f"• Prossima Cedola: {first_coupon_date.strftime('%d/%m/%Y')}")
                 st.write(f"• **Cedole Rimanenti: {remaining_coupons}**")
                 
             with res_col2:
@@ -334,14 +360,22 @@ with st.expander("📊 Calcolatore Professionale Obbligazioni (con Data Emission
                 with schedule_col1:
                     st.write("**Prime 5 Cedole:**")
                     for i, coupon_date in enumerate(coupon_dates[:5]):
-                        status = "✅ Pagata" if coupon_date <= purchase_date else "⏳ Futura"
+                        if coupon_date <= purchase_date:
+                            status = "✅ Pagata"
+                        elif i == 0 and last_coupon is None:
+                            status = "🔄 Prima cedola (in maturazione)"
+                        else:
+                            status = "⏳ Futura"
                         st.write(f"{i+1}. {coupon_date.strftime('%d/%m/%Y')} - {status}")
                 
                 with schedule_col2:
                     if len(coupon_dates) > 5:
                         st.write("**Ultime 5 Cedole:**")
                         for i, coupon_date in enumerate(coupon_dates[-5:]):
-                            status = "✅ Pagata" if coupon_date <= purchase_date else "⏳ Futura"
+                            if coupon_date <= purchase_date:
+                                status = "✅ Pagata"
+                            else:
+                                status = "⏳ Futura"
                             st.write(f"{len(coupon_dates)-4+i}. {coupon_date.strftime('%d/%m/%Y')} - {status}")
             
         except Exception as e:
