@@ -54,8 +54,8 @@ def render_bond_section():
 
 def render_professional_bond_section():
     """Render professional bond calculator section with issue dates"""
-    with st.expander("📊 Calcolatore Professionale Obbligazioni (con Data Emissione)", expanded=False):
-        st.subheader("Calcolo Obbligazioni Professionale")
+    with st.expander("📊 Calcolo Obbligazioni", expanded=False):
+        st.subheader("Calcolo Obbligazioni")
         st.info("💡 Calcolo completo con data emissione, ciclo cedolare preciso e rateo accurato")
         
         col1, col2, col3 = st.columns(3)
