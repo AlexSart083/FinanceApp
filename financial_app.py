@@ -134,6 +134,8 @@ with st.expander("🏘️ Calcolo Investimento Immobiliare", expanded=False):
         st.write("**ℹ️ Note:**")
         st.write("• L'affitto si adegua ogni 4 anni")
         st.write("• al valore rivalutato dell'immobile")
+        st.write("• Costi fissi adeguati ogni 5 anni")
+        st.write("• all'inflazione")
         st.write("• Manutenzione calcolata sul valore")
         st.write("• dell'immobile rivalutato")
     
@@ -906,7 +908,7 @@ with st.expander("📈 Calcolo Interesse Composto (con Investimento Ricorrente)"
         
         interest_rate_annual = st.number_input(
             "Tasso di Interesse Annuo (%)", 
-            min_value=0.0, 
+            min_value=-50.0, 
             max_value=50.0,
             value=5.0,
             step=0.1,
@@ -940,10 +942,12 @@ with st.expander("📈 Calcolo Interesse Composto (con Investimento Ricorrente)"
             fv_initial = initial_investment * (1 + interest_rate_decimal)**investment_years
             
             # Future Value of Recurring Investments (Annuity Future Value)
-            if recurring_investment > 0 and interest_rate_decimal > 0:
-                fv_recurring = recurring_investment * (((1 + interest_rate_decimal)**investment_years - 1) / interest_rate_decimal)
-            elif recurring_investment > 0 and interest_rate_decimal == 0:
-                fv_recurring = recurring_investment * investment_years
+            if recurring_investment > 0:
+                if interest_rate_decimal != 0:
+                    fv_recurring = recurring_investment * (((1 + interest_rate_decimal)**investment_years - 1) / interest_rate_decimal)
+                else:
+                    # If interest rate is exactly 0%, simple sum
+                    fv_recurring = recurring_investment * investment_years
             else:
                 fv_recurring = 0
             
@@ -953,20 +957,53 @@ with st.expander("📈 Calcolo Interesse Composto (con Investimento Ricorrente)"
             # Total invested amount
             total_invested = initial_investment + (recurring_investment * investment_years)
             
-            # Total gains
+            # Total gains (can be negative if interest rate is negative)
             total_gains = total_future_value - total_invested
             
             # Display results
             st.success("**Risultati Interesse Composto:**")
+            
+            # Show warning for negative interest rates
+            if interest_rate_annual < 0:
+                st.warning(f"⚠️ **Tasso di interesse negativo ({interest_rate_annual}%)** - L'investimento perde valore nel tempo!")
+            
             st.write(f"🎯 **Valore Futuro dell'Investimento:** €{total_future_value:.2f}")
             st.write(f"💰 **Totale Investito:** €{total_invested:.2f}")
-            st.write(f"📊 **Guadagno Totale:** €{total_gains:.2f}")
+            
+            # Color code gains/losses
+            if total_gains >= 0:
+                st.write(f"📊 **Guadagno Totale:** €{total_gains:.2f}")
+            else:
+                st.error(f"📉 **Perdita Totale:** €{total_gains:.2f}")
+            
             st.write(f"🚀 **Valore Futuro Investimento Iniziale:** €{fv_initial:.2f}")
             if fv_recurring > 0:
                 st.write(f"🔄 **Valore Futuro Investimenti Ricorrenti:** €{fv_recurring:.2f}")
             
+            # Additional analysis for negative rates
+            if interest_rate_annual < 0:
+                # Calculate how much value is lost each year
+                annual_loss_rate = abs(interest_rate_annual)
+                st.error("**⚠️ Analisi Perdite:**")
+                st.write(f"• Perdita annuale: {annual_loss_rate}%")
+                st.write(f"• Valore perso totale: €{abs(total_gains):.2f}")
+                if initial_investment > 0:
+                    loss_percentage = (abs(total_gains) / total_invested) * 100
+                    st.write(f"• Percentuale di perdita: {loss_percentage:.2f}%")
+            else:
+                # Show positive return analysis
+                if total_invested > 0:
+                    total_return_percentage = (total_gains / total_invested) * 100
+                    st.write(f"📈 **Percentuale di Guadagno:** {total_return_percentage:.2f}%")
+                    
+                    # Calculate annualized return
+                    if investment_years > 0:
+                        annualized_return = ((total_future_value / total_invested) ** (1/investment_years) - 1) * 100
+                        st.write(f"📊 **Rendimento Annualizzato:** {annualized_return:.2f}%")
+            
         except Exception as e:
             st.error("Errore nel calcolo. Verifica i valori inseriti.")
+            st.exception(e)
 
 st.markdown("---")
 
