@@ -14,63 +14,69 @@ st.set_page_config(
 st.title("🏦 Calcolatore Finanziario Avanzato")
 st.markdown("---")
 
-# Improved YTM calculation function
-def calculate_ytm_improved(price, nominal_value, coupon_rate, years_to_maturity, remaining_coupons, coupon_per_period):
-    """Calculate YTM with improved accuracy for short-term bonds"""
+# Corrected YTM calculation function
+def calculate_ytm_corrected(clean_price, nominal_value, coupon_rate, days_to_maturity, remaining_coupons, annual_coupon):
+    """Calculate YTM with correct methodology matching market standards"""
     
-    # For very short-term bonds (< 1 year), use simple approximation
-    if years_to_maturity <= 1.0:
-        # Simple YTM approximation for short-term bonds
-        total_cash_flows = (remaining_coupons * coupon_per_period) + nominal_value
-        total_return = total_cash_flows - price
-        ytm = total_return / (price * years_to_maturity)
+    years_to_maturity = days_to_maturity / 365.25
+    
+    # For bonds with one coupon payment remaining (like our example)
+    if remaining_coupons == 1:
+        # Simple case: one coupon + principal at maturity
+        total_return_at_maturity = annual_coupon + nominal_value
+        
+        # YTM formula for single period: (Future Value / Present Value)^(1/time) - 1
+        ytm = (total_return_at_maturity / clean_price) ** (1 / years_to_maturity) - 1
         return ytm
     
-    # For longer-term bonds, use Newton-Raphson method
-    annual_coupon = nominal_value * (coupon_rate / 100)
+    # For multiple coupon payments, use iterative method
+    # Initial guess based on approximation
+    ytm_guess = (annual_coupon + (nominal_value - clean_price) / years_to_maturity) / clean_price
     
-    # Initial guess based on current yield
-    ytm_guess = annual_coupon / price
-    
-    # Newton-Raphson iteration
+    # Newton-Raphson method for multiple periods
     for iteration in range(100):
-        # Calculate present value of all cash flows
-        pv_total = 0
-        pv_derivative = 0
+        present_value = 0
+        derivative = 0
         
-        # Present value of remaining coupons
+        # Calculate PV of future coupon payments
+        coupon_per_period = annual_coupon  # For annual coupons
+        
+        # For each remaining coupon
+        time_elapsed = 0
         for i in range(remaining_coupons):
-            time_to_payment = years_to_maturity * (i + 1) / remaining_coupons
+            if i == remaining_coupons - 1:
+                # Last coupon comes with principal
+                cash_flow = coupon_per_period + nominal_value
+                time_to_payment = years_to_maturity
+            else:
+                # Regular coupon payment
+                cash_flow = coupon_per_period
+                time_to_payment = years_to_maturity - (i * (years_to_maturity / remaining_coupons))
+            
             discount_factor = (1 + ytm_guess) ** time_to_payment
-            pv_total += coupon_per_period / discount_factor
-            pv_derivative -= time_to_payment * coupon_per_period / (discount_factor * (1 + ytm_guess))
-        
-        # Present value of principal at maturity
-        discount_factor_principal = (1 + ytm_guess) ** years_to_maturity
-        pv_total += nominal_value / discount_factor_principal
-        pv_derivative -= years_to_maturity * nominal_value / (discount_factor_principal * (1 + ytm_guess))
+            present_value += cash_flow / discount_factor
+            derivative -= time_to_payment * cash_flow / (discount_factor * (1 + ytm_guess))
         
         # Price difference
-        price_difference = pv_total - price
+        price_diff = present_value - clean_price
         
-        # Check for convergence
-        if abs(price_difference) < 0.001:
+        # Check convergence
+        if abs(price_diff) < 0.001:
             break
-            
-        # Avoid division by zero
-        if abs(pv_derivative) < 1e-10:
+        
+        # Prevent division by zero
+        if abs(derivative) < 1e-10:
             break
         
         # Newton-Raphson update
-        ytm_new = ytm_guess - (price_difference / pv_derivative)
+        ytm_new = ytm_guess - (price_diff / derivative)
         
-        # Ensure YTM stays reasonable (between -50% and +50%)
-        ytm_new = max(-0.5, min(0.5, ytm_new))
+        # Keep YTM reasonable
+        ytm_new = max(-0.5, min(1.0, ytm_new))
         
-        # Check for convergence in YTM
-        if abs(ytm_new - ytm_guess) < 0.0001:
+        if abs(ytm_new - ytm_guess) < 0.000001:
             break
-            
+        
         ytm_guess = ytm_new
     
     return ytm_guess
@@ -381,9 +387,9 @@ with st.expander("📊 Calcolatore Professionale Obbligazioni (con Data Emission
             else:
                 periods_to_maturity = years_to_maturity_exact
             
-            # Calculate YTM with more robust method
-            if periods_to_maturity > 0:
-                ytm = calculate_ytm_improved(purchase_price, nominal_value, coupon_rate, years_to_maturity_exact, remaining_coupons, coupon_per_period)
+            # Calculate YTM with corrected method
+            if remaining_coupons > 0:
+                ytm = calculate_ytm_corrected(purchase_price, nominal_value, coupon_rate, days_to_maturity, remaining_coupons, annual_coupon)
             else:
                 ytm = 0
             
@@ -429,8 +435,8 @@ with st.expander("📊 Calcolatore Professionale Obbligazioni (con Data Emission
                 
             with res_col3:
                 st.write("**📈 Rendimenti e Metriche:**")
-                # Calculate holding period yield
-                holding_period_yield = (total_return / purchase_price) * 100
+                # Calculate holding period yield (based on dirty price - actual amount paid)
+                holding_period_yield = (total_return / dirty_price) * 100
                 
                 st.write(f"• **YTM (Yield to Maturity): {ytm:.3%}**")
                 st.write(f"• Current Yield: {current_yield:.2f}%")
