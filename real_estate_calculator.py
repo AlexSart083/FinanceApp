@@ -126,12 +126,12 @@ def render_real_estate_section():
             
             st.write("**ℹ️ Note:**")
             st.write("• L'affitto si adegua in base")
-            st.write("• agli anni specificati")
-            st.write("• al valore rivalutato dell'immobile")
+            st.write("agli anni specificati")
+            st.write("al valore rivalutato dell'immobile.")
             st.write("• Costi percentuali si aggiornano")
-            st.write("• al valore dell'immobile")
+            st.write("al valore dell'immobile.")
             st.write("• Manutenzione e tassa catastale")
-            st.write("• calcolate su valore corrente")
+            st.write("calcolate su valore corrente")
         
         if st.button("🏠 Calcola Investimento Immobiliare", key="calc_real_estate"):
             try:
