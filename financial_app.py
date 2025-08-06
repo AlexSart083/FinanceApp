@@ -14,6 +14,56 @@ st.set_page_config(
 st.title("🏦 Calcolatore Finanziario Avanzato")
 st.markdown("---")
 
+# Function to calculate YTM using Newton-Raphson method
+def calculate_ytm(price, nominal_value, coupon_rate, periods_to_maturity, coupon_frequency):
+    """Calculate Yield to Maturity using iterative method"""
+    
+    # Convert annual coupon rate to periodic rate
+    if coupon_frequency == "Semestrale":
+        coupon_per_period = (nominal_value * coupon_rate / 100) / 2
+        periods_per_year = 2
+    elif coupon_frequency == "Trimestrale":
+        coupon_per_period = (nominal_value * coupon_rate / 100) / 4
+        periods_per_year = 4
+    else:  # Annuale
+        coupon_per_period = nominal_value * coupon_rate / 100
+        periods_per_year = 1
+    
+    # Initial guess for YTM (5% annually)
+    ytm_guess = 0.05 / periods_per_year
+    
+    # Newton-Raphson iteration
+    for _ in range(100):  # Max 100 iterations
+        # Calculate bond price with current YTM guess
+        pv_coupons = 0
+        pv_derivative = 0
+        
+        for period in range(1, int(periods_to_maturity) + 1):
+            discount_factor = (1 + ytm_guess) ** period
+            pv_coupons += coupon_per_period / discount_factor
+            pv_derivative -= period * coupon_per_period / (discount_factor * (1 + ytm_guess))
+        
+        # Present value of principal
+        pv_principal = nominal_value / ((1 + ytm_guess) ** periods_to_maturity)
+        pv_derivative -= periods_to_maturity * nominal_value / ((1 + ytm_guess) ** (periods_to_maturity + 1))
+        
+        # Total theoretical price
+        theoretical_price = pv_coupons + pv_principal
+        
+        # Price difference
+        price_difference = theoretical_price - price
+        
+        # Break if close enough
+        if abs(price_difference) < 0.01:
+            break
+        
+        # Newton-Raphson update
+        ytm_guess = ytm_guess - (price_difference / pv_derivative)
+    
+    # Convert to annual YTM
+    annual_ytm = ytm_guess * periods_per_year
+    return annual_ytm
+
 # Function to generate all coupon dates
 def generate_coupon_dates(issue_date, maturity_date, first_coupon_date, coupon_frequency):
     """Generate all coupon payment dates from issue to maturity"""
