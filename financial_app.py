@@ -14,6 +14,314 @@ st.set_page_config(
 st.title("🏦 Calcolatore Finanziario Avanzato")
 st.markdown("---")
 
+# Section 5: Real Estate Investment Calculator
+with st.expander("🏘️ Calcolo Investimento Immobiliare", expanded=False):
+    st.subheader("Analisi Investimento Immobiliare")
+    st.info("💡 Calcolo completo con rivalutazione, inflazione e adeguamento affitti")
+    
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        st.write("**🏠 Parametri Base Immobile**")
+        
+        valore_immobile = st.number_input(
+            "Valore Immobile (€)", 
+            min_value=1000.00, 
+            value=200000.00,
+            step=5000.00,
+            key="real_estate_value"
+        )
+        
+        affitto_lordo = st.number_input(
+            "Affitto Lordo Annuo (€)", 
+            min_value=0.00, 
+            value=12000.00,
+            step=100.00,
+            key="real_estate_rent"
+        )
+        
+        rivalutazione_annua = st.number_input(
+            "Rivalutazione Annua (%)", 
+            min_value=0.0, 
+            max_value=20.0,
+            value=2.5,
+            step=0.1,
+            key="real_estate_appreciation"
+        )
+        
+        anni_investimento = st.number_input(
+            "Anni di Investimento", 
+            min_value=1, 
+            value=10,
+            step=1,
+            key="real_estate_years"
+        )
+    
+    with col2:
+        st.write("**💸 Costi e Spese**")
+        
+        costi_assicurazione = st.number_input(
+            "Costi Assicurazione Annui (€)", 
+            min_value=0.00, 
+            value=500.00,
+            step=50.00,
+            key="real_estate_insurance"
+        )
+        
+        costi_condominiali = st.number_input(
+            "Costi Condominiali Annui (€)", 
+            min_value=0.00, 
+            value=1200.00,
+            step=100.00,
+            key="real_estate_condo"
+        )
+        
+        manutenzione_straordinaria_perc = st.number_input(
+            "Manutenzione Straordinaria Annua (%)", 
+            min_value=0.0, 
+            max_value=10.0,
+            value=0.5,
+            step=0.1,
+            key="real_estate_maintenance"
+        )
+        
+        costi_aggiuntivi = st.number_input(
+            "Costi Aggiuntivi Annui (€)", 
+            min_value=0.00, 
+            value=300.00,
+            step=50.00,
+            key="real_estate_additional"
+        )
+        
+        tassazione_affitti_perc = st.number_input(
+            "Tassazione su Affitti (%)", 
+            min_value=0.0, 
+            max_value=50.0,
+            value=21.0,
+            step=1.0,
+            key="real_estate_tax_rate"
+        )
+        
+        tassa_proprieta = st.number_input(
+            "Tassa di Proprietà Annua (€)", 
+            min_value=0.00, 
+            value=800.00,
+            step=50.00,
+            key="real_estate_property_tax"
+        )
+    
+    with col3:
+        st.write("**📊 Parametri Economici**")
+        
+        periodo_sfitto_perc = st.number_input(
+            "Periodo Annuo Sfitto (%)", 
+            min_value=0.0, 
+            max_value=100.0,
+            value=5.0,
+            step=1.0,
+            key="real_estate_vacancy"
+        )
+        
+        inflazione_perc = st.number_input(
+            "Inflazione Annua (%)", 
+            min_value=0.0, 
+            max_value=15.0,
+            value=2.0,
+            step=0.1,
+            key="real_estate_inflation"
+        )
+        
+        st.write("**ℹ️ Note:**")
+        st.write("• L'affitto si adegua ogni 4 anni")
+        st.write("• al valore rivalutato dell'immobile")
+        st.write("• Manutenzione calcolata sul valore")
+        st.write("• dell'immobile rivalutato")
+    
+    # Real Estate calculations
+    if st.button("🏠 Calcola Investimento Immobiliare", key="calc_real_estate"):
+        try:
+            # Convert percentages to decimals
+            rivalutazione_decimal = rivalutazione_annua / 100
+            inflazione_decimal = inflazione_perc / 100
+            periodo_sfitto_decimal = periodo_sfitto_perc / 100
+            manutenzione_decimal = manutenzione_straordinaria_perc / 100
+            tassazione_decimal = tassazione_affitti_perc / 100
+            
+            # Initialize variables for year-by-year calculation
+            valore_corrente = valore_immobile
+            affitto_corrente = affitto_lordo
+            
+            # Lists to store annual data
+            valori_annuali = []
+            affitti_netti_annuali = []
+            rendimenti_annuali = []
+            
+            # Calculate year by year
+            for anno in range(1, anni_investimento + 1):
+                # Update property value with appreciation
+                valore_corrente = valore_corrente * (1 + rivalutazione_decimal)
+                
+                # Adjust rent every 4 years based on new property value
+                if anno % 4 == 0:
+                    # Calculate new rent as percentage of current property value
+                    # Assuming initial rent was about 6% of property value, maintain same ratio
+                    rapporto_affitto_iniziale = affitto_lordo / valore_immobile
+                    affitto_corrente = valore_corrente * rapporto_affitto_iniziale
+                
+                # Calculate effective rent considering vacancy
+                affitto_effettivo = affitto_corrente * (1 - periodo_sfitto_decimal)
+                
+                # Calculate taxes on rent
+                tasse_affitto = affitto_effettivo * tassazione_decimal
+                
+                # Calculate annual costs
+                manutenzione_annua = valore_corrente * manutenzione_decimal
+                costi_totali_annui = (costi_assicurazione + costi_condominiali + 
+                                    manutenzione_annua + costi_aggiuntivi + 
+                                    tassa_proprieta + tasse_affitto)
+                
+                # Calculate net annual rent
+                affitto_netto = affitto_effettivo - costi_totali_annui
+                
+                # Calculate annual yield on current property value
+                rendimento_annuo = (affitto_netto / valore_immobile) * 100 if valore_immobile > 0 else 0
+                
+                # Store data
+                valori_annuali.append(valore_corrente)
+                affitti_netti_annuali.append(affitto_netto)
+                rendimenti_annuali.append(rendimento_annuo)
+            
+            # Final calculations
+            valore_finale_nominale = valori_annuali[-1]
+            valore_finale_reale = valore_finale_nominale / ((1 + inflazione_decimal) ** anni_investimento)
+            
+            # Total net rent received over the period
+            totale_affitti_netti = sum(affitti_netti_annuali)
+            
+            # Average annual net yield
+            rendimento_medio_annuo = sum(rendimenti_annuali) / len(rendimenti_annuali)
+            
+            # Total return calculation
+            guadagno_capitale_nominale = valore_finale_nominale - valore_immobile
+            guadagno_capitale_reale = valore_finale_reale - valore_immobile
+            
+            rendimento_totale_nominale = totale_affitti_netti + guadagno_capitale_nominale
+            rendimento_totale_reale = totale_affitti_netti + guadagno_capitale_reale
+            
+            # Display comprehensive results
+            st.success("**🎯 Risultati Analisi Investimento Immobiliare**")
+            
+            # Create detailed results layout
+            res_col1, res_col2, res_col3 = st.columns(3)
+            
+            with res_col1:
+                st.write("**🏠 Valore Immobile:**")
+                st.write(f"• Valore Iniziale: €{valore_immobile:,.2f}")
+                st.write(f"• **Valore Finale (Nominale): €{valore_finale_nominale:,.2f}**")
+                st.write(f"• **Valore Finale (Reale): €{valore_finale_reale:,.2f}**")
+                st.write(f"• Guadagno Capitale (Nominale): €{guadagno_capitale_nominale:,.2f}")
+                st.write(f"• Guadagno Capitale (Reale): €{guadagno_capitale_reale:,.2f}")
+                st.write(f"• Rivalutazione Totale: {((valore_finale_nominale/valore_immobile - 1) * 100):.2f}%")
+            
+            with res_col2:
+                st.write("**💰 Analisi Affitti:**")
+                st.write(f"• Affitto Iniziale: €{affitto_lordo:,.2f}")
+                st.write(f"• Affitto Finale: €{affitto_corrente:,.2f}")
+                st.write(f"• **Totale Affitti Netti {anni_investimento} anni: €{totale_affitti_netti:,.2f}**")
+                st.write(f"• **Rendimento Medio Annuo: {rendimento_medio_annuo:.2f}%**")
+                st.write(f"• Periodo Sfitto Considerato: {periodo_sfitto_perc}%")
+                st.write(f"• Adeguamenti Affitto: {anni_investimento // 4} volte")
+            
+            with res_col3:
+                st.write("**📈 Rendimento Totale:**")
+                st.write(f"• **Rendimento Totale (Nominale): €{rendimento_totale_nominale:,.2f}**")
+                st.write(f"• **Rendimento Totale (Reale): €{rendimento_totale_reale:,.2f}**")
+                rendimento_perc_nominale = (rendimento_totale_nominale / valore_immobile) * 100
+                rendimento_perc_reale = (rendimento_totale_reale / valore_immobile) * 100
+                st.write(f"• Rendimento % (Nominale): {rendimento_perc_nominale:.2f}%")
+                st.write(f"• Rendimento % (Reale): {rendimento_perc_reale:.2f}%")
+                
+                # CAGR calculation
+                cagr_nominale = ((valore_finale_nominale + totale_affitti_netti) / valore_immobile) ** (1/anni_investimento) - 1
+                cagr_reale = ((valore_finale_reale + totale_affitti_netti) / valore_immobile) ** (1/anni_investimento) - 1
+                st.write(f"• **CAGR (Nominale): {cagr_nominale:.2%}**")
+                st.write(f"• **CAGR (Reale): {cagr_reale:.2%}**")
+            
+            # Detailed cost breakdown for the last year
+            st.write("**💸 Dettaglio Costi Ultimo Anno:**")
+            cost_col1, cost_col2 = st.columns(2)
+            
+            with cost_col1:
+                ultima_manutenzione = valori_annuali[-1] * manutenzione_decimal
+                ultimo_affitto_effettivo = affitto_corrente * (1 - periodo_sfitto_decimal)
+                ultime_tasse_affitto = ultimo_affitto_effettivo * tassazione_decimal
+                ultimi_costi_totali = (costi_assicurazione + costi_condominiali + 
+                                     ultima_manutenzione + costi_aggiuntivi + 
+                                     tassa_proprieta + ultime_tasse_affitto)
+                
+                st.write(f"• Assicurazione: €{costi_assicurazione:,.2f}")
+                st.write(f"• Spese Condominiali: €{costi_condominiali:,.2f}")
+                st.write(f"• Manutenzione Straordinaria: €{ultima_manutenzione:,.2f}")
+                st.write(f"• Costi Aggiuntivi: €{costi_aggiuntivi:,.2f}")
+                st.write(f"• **Tassa di Proprietà: €{tassa_proprieta:,.2f}**")
+                st.write(f"• **Tasse su Affitti ({tassazione_affitti_perc}%): €{ultime_tasse_affitto:,.2f}**")
+            
+            with cost_col2:
+                st.write(f"• **Totale Costi Annui: €{ultimi_costi_totali:,.2f}**")
+                st.write(f"• Affitto Lordo: €{affitto_corrente:,.2f}")
+                st.write(f"• Meno Periodo Sfitto: €{affitto_corrente * periodo_sfitto_decimal:,.2f}")
+                st.write(f"• Affitto Effettivo: €{ultimo_affitto_effettivo:,.2f}")
+                st.write(f"• **Affitto Netto Finale: €{affitti_netti_annuali[-1]:,.2f}**")
+                
+                # Calculate net yield after all costs and taxes
+                rendimento_lordo_finale = (affitto_corrente / valore_finale_nominale) * 100
+                rendimento_netto_finale = (affitti_netti_annuali[-1] / valore_immobile) * 100
+                st.write(f"• Rendimento Lordo: {rendimento_lordo_finale:.2f}%")
+                st.write(f"• **Rendimento Netto: {rendimento_netto_finale:.2f}%**")
+            
+            # Additional analysis
+            st.write("**📊 Analisi Aggiuntiva:**")
+            
+            analysis_col1, analysis_col2 = st.columns(2)
+            
+            with analysis_col1:
+                # Yield analysis
+                gross_yield_initial = (affitto_lordo / valore_immobile) * 100
+                gross_yield_final = (affitto_corrente / valore_finale_nominale) * 100
+                
+                st.write("**📈 Analisi Rendimenti:**")
+                st.write(f"• Rendimento Lordo Iniziale: {gross_yield_initial:.2f}%")
+                st.write(f"• Rendimento Lordo Finale: {gross_yield_final:.2f}%")
+                st.write(f"• Rendimento Netto Medio: {rendimento_medio_annuo:.2f}%")
+                
+                # Break-even analysis
+                break_even_years = valore_immobile / (sum(affitti_netti_annuali) / anni_investimento) if sum(affitti_netti_annuali) > 0 else float('inf')
+                st.write(f"• Payback Period: {break_even_years:.1f} anni")
+            
+            with analysis_col2:
+                st.write("**⚠️ Considerazioni:**")
+                if rendimento_medio_annuo < 3:
+                    st.warning("⚠️ Rendimento netto basso (< 3%)")
+                elif rendimento_medio_annuo > 7:
+                    st.success("✅ Rendimento netto interessante (> 7%)")
+                else:
+                    st.info("ℹ️ Rendimento netto moderato (3-7%)")
+                
+                if periodo_sfitto_perc > 10:
+                    st.warning("⚠️ Periodo di sfitto elevato considerato")
+                
+                if rivalutazione_annua < inflazione_perc:
+                    st.warning("⚠️ Rivalutazione < Inflazione: perdita valore reale")
+                else:
+                    st.info("✅ Rivalutazione > Inflazione: mantenimento valore reale")
+            
+        except Exception as e:
+            st.error(f"❌ Errore nel calcolo immobiliare: {str(e)}")
+            st.error("Verifica che tutti i valori siano corretti.")
+            st.exception(e)
+
+st.markdown("---")
+
 # Corrected YTM calculation with proper formula
 def calculate_ytm_linear(dirty_price, nominal_value, total_future_cash_flows, days_to_maturity):
     """Calculate YTM using linear approximation formula (market standard for short-term bonds)"""
