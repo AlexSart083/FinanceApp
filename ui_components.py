@@ -38,7 +38,8 @@ def render_footer():
     
     🔒 **Privacy dei Dati**: I dati inseriti nell'applicazione non vengono salvati, archiviati o trasmessi in alcun modo dal sistema o dall'applicazione stessa.
     """)
-"""Render the footer with notes and requirements"""
+    
+    """Render the footer with notes and requirements"""
     st.markdown("---")
     st.markdown("### 📝 Note:")
     st.info("""
