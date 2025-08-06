@@ -191,6 +191,15 @@ with st.expander("📊 Calcolatore Professionale Obbligazioni (con Data Emission
             index=1,  # Default to Semestrale
             key="prof_bond_frequency"
         )
+        
+        # Number of bonds purchased
+        num_bonds = st.number_input(
+            "Numero di Obbligazioni Acquistate", 
+            min_value=1, 
+            value=1,
+            step=1,
+            key="prof_bond_number"
+        )
     
     with col2:
         st.write("**📅 Date Fondamentali**")
@@ -330,15 +339,15 @@ with st.expander("📊 Calcolatore Professionale Obbligazioni (con Data Emission
             else:
                 periods_to_maturity = years_to_maturity_exact
             
-            # Calculate total future coupons
-            total_future_coupons = coupon_per_period * remaining_coupons
+            # Calculate total future coupons (adjusted for number of bonds)
+            total_future_coupons = coupon_per_period * remaining_coupons * num_bonds
             
-            # Calculate total future cash flows
-            total_future_cash_flows = total_future_coupons + nominal_value
+            # Calculate total future cash flows (adjusted for number of bonds)
+            total_future_cash_flows = (total_future_coupons + nominal_value * num_bonds)
             
-            # Calculate YTM using linear method
+            # Calculate YTM using linear method (per single bond)
             if days_to_maturity > 0:
-                ytm = calculate_ytm_linear(dirty_price, nominal_value, total_future_cash_flows, days_to_maturity)
+                ytm = calculate_ytm_linear(dirty_price, nominal_value, total_future_cash_flows / num_bonds, days_to_maturity)
             else:
                 ytm = 0
             
@@ -366,20 +375,23 @@ with st.expander("📊 Calcolatore Professionale Obbligazioni (con Data Emission
                 
             with res_col2:
                 st.write("**💰 Analisi Prezzi e Cedole:**")
-                st.write(f"• Cedola Annuale: €{annual_coupon:.2f}")
-                st.write(f"• Cedola per Periodo: €{coupon_per_period:.2f}")
+                st.write(f"• Cedola Annuale (per obbligazione): €{annual_coupon:.2f}")
+                st.write(f"• Cedola per Periodo (per obbligazione): €{coupon_per_period:.2f}")
                 st.write(f"• Frequenza: {coupon_frequency}")
-                st.write(f"• **Prezzo Clean: €{purchase_price:.2f}**")
-                st.write(f"• **Rateo Interessi: €{accrued_interest:.2f}**")
-                st.write(f"• **Prezzo Dirty: €{dirty_price:.2f}**")
+                st.write(f"• **Numero Obbligazioni: {num_bonds}**")
+                st.write(f"• **Prezzo Clean (per obbligazione): €{purchase_price:.2f}**")
+                st.write(f"• **Rateo Interessi (per obbligazione): €{accrued_interest:.2f}**")
+                st.write(f"• **Prezzo Dirty (per obbligazione): €{dirty_price:.2f}**")
+                st.write(f"• **Investimento Totale: €{dirty_price * num_bonds:.2f}**")
                 
             with res_col3:
                 st.write("**📈 Rendimenti e Metriche:**")
                 # Calculate total capital at end of investment (coupons + principal repayment)
-                total_capital_at_end = total_future_coupons + nominal_value
+                total_capital_at_end = total_future_coupons + (nominal_value * num_bonds)
                 
-                # Calculate total gain (total capital at end - dirty price paid)
-                total_gain = total_capital_at_end - dirty_price
+                # Calculate total gain (total capital at end - total dirty price paid)
+                total_investment = dirty_price * num_bonds
+                total_gain = total_capital_at_end - total_investment
                 
                 st.write(f"• **YTM (Yield to Maturity): {ytm:.3%}**")
                 st.write(f"• **Capitale Totale a Fine Investimento: €{total_capital_at_end:.2f}**")
