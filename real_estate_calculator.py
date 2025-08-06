@@ -1,5 +1,5 @@
 import streamlit as st
-from ui_components import format_currency, format_percentage
+from .ui_components import format_currency, format_percentage
 
 def render_real_estate_section():
     """Render real estate investment calculator section"""
@@ -211,6 +211,12 @@ def calculate_real_estate_investment(params):
     valore_finale_nominale = valori_annuali[-1]
     valore_finale_reale = valore_finale_nominale / ((1 + inflazione_decimal) ** params['anni_investimento'])
     
+    # Total net rent received over the period
+    totale_affitti_netti = sum(affitti_netti_annuali)
+    
+    # Average annual net yield
+    rendimento_medio_annuo = sum(rendimenti_annuali) / len(rendimenti_annuali) if rendimenti_annuali else 0
+    
     # Total return calculation
     guadagno_capitale_nominale = valore_finale_nominale - params['valore_immobile']
     guadagno_capitale_reale = valore_finale_reale - params['valore_immobile']
@@ -276,8 +282,8 @@ def display_real_estate_results(results, params):
         
         st.write(f"• Rendimento % (Nominale): {format_percentage(rendimento_perc_nominale)}")
         st.write(f"• Rendimento % (Reale): {format_percentage(rendimento_perc_reale)}")
-        st.write(f"• **CAGR (Nominale): {format_percentage(results['cagr_nominale'] * 100)}")
-        st.write(f"• **CAGR (Reale): {format_percentage(results['cagr_reale'] * 100)}")
+        st.write(f"• **CAGR (Nominale): {format_percentage(results['cagr_nominale'] * 100)}**")
+        st.write(f"• **CAGR (Reale): {format_percentage(results['cagr_reale'] * 100)}**")
     
     # Detailed cost breakdown for the last year
     display_cost_breakdown(results, params)
@@ -398,10 +404,16 @@ def display_additional_analysis(results, params):
         elif total_costs_perc < 2:
             st.success("✅ Struttura costi efficiente (< 2%)")
         else:
-            st.info("ℹ️ Struttura costi nella media (2-4%)") net rent received over the period
-    totale_affitti_netti = sum(affitti_netti_annuali)
-    
-    # Average annual net yield
-    rendimento_medio_annuo = sum(rendimenti_annuali) / len(rendimenti_annuali) if rendimenti_annuali else 0
-    
-    # Total
+            st.info("ℹ️ Struttura costi nella media (2-4%)")
+        
+        # CAGR analysis
+        if results['cagr_reale'] > 0.08:  # 8%
+            st.success("🚀 CAGR reale eccellente (> 8%)")
+        elif results['cagr_reale'] > 0.05:  # 5%
+            st.success("✅ CAGR reale buono (> 5%)")
+        elif results['cagr_reale'] > 0.02:  # 2%
+            st.info("📈 CAGR reale moderato (> 2%)")
+        elif results['cagr_reale'] > 0:
+            st.info("📊 CAGR reale positivo ma basso")
+        else:
+            st.error("📉 CAGR reale negativo - perdita di valore")
