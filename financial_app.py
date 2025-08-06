@@ -139,7 +139,7 @@ with st.expander("🏠 Calcolo Interessi su un Prestito (TAN e TAEG)", expanded=
             st.success("**Risultati Prestito:**")
             st.write(f"💳 **Rata Mensile:** €{monthly_payment:.2f}")
             st.write(f"💸 **Interessi Totali Pagati (basato sul TAN):** €{total_interest:.2f}")
-            st.write(f"📊 **TAEG Annuo di Riferimento:** {taeg_annual:.2%}")
+            st.write(f"📊 **TAEG Annuo di Riferimento:** {taeg_annual:.2f}%")
             st.write(f"💰 **Costo Totale del Prestito:** €{total_loan_cost:.2f}")
             
         except Exception as e:
