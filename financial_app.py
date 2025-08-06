@@ -1,4 +1,290 @@
-import streamlit as st
+# Function to generate all coupon dates
+def generate_coupon_dates(issue_date, maturity_date, first_coupon_date, coupon_frequency):
+    """Generate all coupon payment dates from issue to maturity"""
+    coupon_dates = []
+    
+    # Determine the increment based on frequency
+    if coupon_frequency == "Semestrale":
+        months_increment = 6
+    elif coupon_frequency == "Trimestrale":
+        months_increment = 3
+    else:  # Annuale
+        months_increment = 12
+    
+    # Start from first coupon date
+    current_date = first_coupon_date
+    
+    # Generate all coupon dates until maturity
+    while current_date <= maturity_date:
+        coupon_dates.append(current_date)
+        current_date = current_date + relativedelta(months=months_increment)
+    
+    return coupon_dates
+
+# Function to find last coupon payment before purchase
+def find_last_coupon_before_purchase(coupon_dates, purchase_date):
+    """Find the last coupon payment date before purchase date"""
+    last_coupon = None
+    next_coupon = None
+    
+    for coupon_date in coupon_dates:
+        if coupon_date <= purchase_date:
+            last_coupon = coupon_date
+        elif coupon_date > purchase_date and next_coupon is None:
+            next_coupon = coupon_date
+            break
+    
+    return last_coupon, next_coupon
+
+# Function to calculate precise accrued interest
+def calculate_precise_accrued_interest(nominal_value, coupon_rate, last_coupon_date, purchase_date, next_coupon_date):
+    """Calculate accrued interest based on actual coupon period"""
+    if last_coupon_date is None or next_coupon_date is None:
+        return 0
+    
+    # Days from last coupon to purchase
+    days_since_last_coupon = (purchase_date - last_coupon_date).days
+    
+    # Total days in the coupon period
+    days_in_coupon_period = (next_coupon_date - last_coupon_date).days
+    
+    # Annual coupon amount
+    annual_coupon = nominal_value * (coupon_rate / 100)
+    
+    # Determine coupon frequency and amount per period
+    months_between = (next_coupon_date.year - last_coupon_date.year) * 12 + (next_coupon_date.month - last_coupon_date.month)
+    
+    if months_between <= 3:
+        coupon_per_period = annual_coupon / 4
+    elif months_between <= 6:
+        coupon_per_period = annual_coupon / 2
+    else:
+        coupon_per_period = annual_coupon
+    
+    # Calculate accrued interest using actual/actual day count
+    accrued_interest = coupon_per_period * (days_since_last_coupon / days_in_coupon_period)
+    
+    return accrued_interest
+
+# Function to count remaining coupons
+def count_remaining_coupons(coupon_dates, purchase_date):
+    """Count remaining coupon payments after purchase date"""
+    return len([date for date in coupon_dates if date > purchase_date])
+
+# Section 1: Professional Bond Calculator
+with st.expander("📊 Calcolatore Professionale Obbligazioni (con Data Emissione)", expanded=False):
+    st.subheader("Calcolo Obbligazioni Professionale")
+    st.info("💡 Calcolo completo con data emissione, ciclo cedolare preciso e rateo accurato")
+    
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        st.write("**📋 Parametri Base Obbligazione**")
+        
+        # Basic bond parameters
+        nominal_value = st.number_input(
+            "Valore Nominale (€)", 
+            min_value=0.01, 
+            value=1000.00,
+            step=10.00,
+            key="prof_bond_nominal"
+        )
+        
+        coupon_rate = st.number_input(
+            "Tasso Cedolare Annuo (%)", 
+            min_value=0.0, 
+            max_value=50.0,
+            value=3.5,
+            step=0.01,
+            key="prof_bond_coupon"
+        )
+        
+        purchase_price = st.number_input(
+            "Prezzo Clean di Acquisto (€)", 
+            min_value=0.01, 
+            value=975.00,
+            step=0.01,
+            key="prof_bond_price"
+        )
+        
+        # Coupon frequency
+        coupon_frequency = st.selectbox(
+            "Frequenza Pagamento Cedole",
+            ["Annuale", "Semestrale", "Trimestrale"],
+            index=1,  # Default to Semestrale
+            key="prof_bond_frequency"
+        )
+    
+    with col2:
+        st.write("**📅 Date Fondamentali**")
+        
+        # Issue date
+        issue_date = st.date_input(
+            "📅 Data di Emissione", 
+            value=date.today() - relativedelta(years=2),
+            key="prof_bond_issue_date"
+        )
+        
+        # First coupon date (can be different from regular schedule)
+        first_coupon_date = st.date_input(
+            "🎯 Prima Data Cedola", 
+            value=issue_date + relativedelta(months=6),
+            key="prof_bond_first_coupon"
+        )
+        
+        # Purchase date
+        purchase_date = st.date_input(
+            "🛒 Data di Acquisto", 
+            value=date.today(),
+            key="prof_bond_purchase_date"
+        )
+        
+        # Maturity date
+        maturity_date = st.date_input(
+            "⏰ Data di Scadenza", 
+            value=issue_date + relativedelta(years=10),
+            min_value=purchase_date,
+            key="prof_bond_maturity_date"
+        )
+    
+    with col3:
+        st.write("**📊 Informazioni Calcolate**")
+        
+        # Calculate some preliminary info
+        days_since_issue = (purchase_date - issue_date).days
+        days_to_maturity = (maturity_date - purchase_date).days
+        years_to_maturity = days_to_maturity / 365.25
+        
+        st.write(f"**Giorni da Emissione:** {days_since_issue}")
+        st.write(f"**Giorni a Scadenza:** {days_to_maturity}")
+        st.write(f"**Anni a Scadenza:** {years_to_maturity:.3f}")
+        
+        # Show coupon frequency info
+        if coupon_frequency == "Semestrale":
+            periods_per_year = 2
+            st.write(f"**Cedole/Anno:** {periods_per_year}")
+        elif coupon_frequency == "Trimestrale":
+            periods_per_year = 4
+            st.write(f"**Cedole/Anno:** {periods_per_year}")
+        else:
+            periods_per_year = 1
+            st.write(f"**Cedole/Anno:** {periods_per_year}")
+    
+    # Professional bond calculations
+    if st.button("🚀 Calcola Obbligazione Professionale", key="calc_prof_bond"):
+        try:
+            # Validate dates
+            if issue_date >= purchase_date:
+                st.error("❌ La data di emissione deve essere precedente alla data di acquisto!")
+                st.stop()
+            
+            if first_coupon_date <= issue_date:
+                st.error("❌ La prima data cedola deve essere successiva alla data di emissione!")
+                st.stop()
+                
+            if maturity_date <= purchase_date:
+                st.error("❌ La data di scadenza deve essere successiva alla data di acquisto!")
+                st.stop()
+            
+            # Generate all coupon dates
+            coupon_dates = generate_coupon_dates(issue_date, maturity_date, first_coupon_date, coupon_frequency)
+            
+            if not coupon_dates:
+                st.error("❌ Impossibile generare le date delle cedole. Verifica i parametri.")
+                st.stop()
+            
+            # Find last and next coupon relative to purchase
+            last_coupon, next_coupon = find_last_coupon_before_purchase(coupon_dates, purchase_date)
+            
+            # Calculate precise accrued interest
+            accrued_interest = calculate_precise_accrued_interest(
+                nominal_value, coupon_rate, last_coupon, purchase_date, next_coupon
+            )
+            
+            # Calculate dirty price
+            dirty_price = purchase_price + accrued_interest
+            
+            # Count remaining coupons
+            remaining_coupons = count_remaining_coupons(coupon_dates, purchase_date)
+            
+            # Calculate periods to maturity for YTM
+            if coupon_frequency == "Semestrale":
+                periods_to_maturity = days_to_maturity / 182.5
+            elif coupon_frequency == "Trimestrale":
+                periods_to_maturity = days_to_maturity / 91.25
+            else:
+                periods_to_maturity = days_to_maturity / 365.25
+            
+            # Calculate YTM
+            ytm = calculate_ytm(purchase_price, nominal_value, coupon_rate, periods_to_maturity, coupon_frequency)
+            
+            # Calculate annual coupon and coupon per period
+            annual_coupon = nominal_value * (coupon_rate / 100)
+            
+            if coupon_frequency == "Semestrale":
+                coupon_per_period = annual_coupon / 2
+            elif coupon_frequency == "Trimestrale":
+                coupon_per_period = annual_coupon / 4
+            else:
+                coupon_per_period = annual_coupon
+            
+            # Calculate total expected returns
+            total_future_coupons = coupon_per_period * remaining_coupons
+            capital_gain_loss = nominal_value - purchase_price
+            total_return = total_future_coupons + capital_gain_loss
+            total_return_percentage = (total_return / purchase_price) * 100
+            
+            # Calculate current yield
+            current_yield = (annual_coupon / purchase_price) * 100
+            
+            # Display comprehensive results
+            st.success("**🎯 Risultati Calcolo Professionale Obbligazione**")
+            
+            # Create detailed results layout
+            res_col1, res_col2, res_col3 = st.columns(3)
+            
+            with res_col1:
+                st.write("**📅 Analisi Date e Ciclo Cedolare:**")
+                st.write(f"• Data Emissione: {issue_date.strftime('%d/%m/%Y')}")
+                st.write(f"• Prima Cedola: {first_coupon_date.strftime('%d/%m/%Y')}")
+                st.write(f"• Data Acquisto: {purchase_date.strftime('%d/%m/%Y')}")
+                st.write(f"• Data Scadenza: {maturity_date.strftime('%d/%m/%Y')}")
+                if last_coupon:
+                    st.write(f"• Ultima Cedola Pagata: {last_coupon.strftime('%d/%m/%Y')}")
+                if next_coupon:
+                    st.write(f"• Prossima Cedola: {next_coupon.strftime('%d/%m/%Y')}")
+                st.write(f"• **Cedole Rimanenti: {remaining_coupons}**")
+                
+            with res_col2:
+                st.write("**💰 Analisi Prezzi e Cedole:**")
+                st.write(f"• Cedola Annuale: €{annual_coupon:.2f}")
+                st.write(f"• Cedola per Periodo: €{coupon_per_period:.2f}")
+                st.write(f"• Frequenza: {coupon_frequency}")
+                st.write(f"• **Prezzo Clean: €{purchase_price:.2f}**")
+                st.write(f"• **Rateo Interessi: €{accrued_interest:.2f}**")
+                st.write(f"• **Prezzo Dirty: €{dirty_price:.2f}**")
+                
+            with res_col3:
+                st.write("**📈 Rendimenti e Metriche:**")
+                st.write(f"• **YTM (Yield to Maturity): {ytm:.3%}**")
+                st.write(f"• Current Yield: {current_yield:.2f}%")
+                st.write(f"• Cedole Future Totali: €{total_future_coupons:.2f}")
+                st.write(f"• Capital Gain/Loss: €{capital_gain_loss:.2f}")
+                st.write(f"• **Rendimento Totale: €{total_return:.2f}**")
+                st.write(f"• **Rendimento Totale %: {total_return_percentage:.2f}%**")
+            
+            # Additional analysis
+            st.write("**📊 Analisi Aggiuntiva:**")
+            
+            analysis_col1, analysis_col2 = st.columns(2)
+            
+            with analysis_col1:
+                # Price analysis
+                if purchase_price < nominal_value:
+                    discount = ((nominal_value - purchase_price) / nominal_value) * 100
+                    st.info(f"📉 Obbligazione acquistata **sotto la pari** (sconto: {discount:.2f}%)")
+                elif purchase_price > nominal_value:
+                    premium = ((purchase_price - nominal_value) / nominal_value) * 100import streamlit as st
 import math
 from datetime import datetime, date
 from dateutil.relativedelta import relativedelta
@@ -490,4 +776,4 @@ st.markdown("### 📦 Requirements.txt per Deploy:")
 st.code("""streamlit>=1.28.0
 python-dateutil>=2.8.2""", language="txt")
 
-st.markdown("*Sviluppato per calcoli finanziari di base.*")
+st.markdown("*Sviluppato per calcoli finanziari di base. Consultare sempre un consulente finanziario qualificato per decisioni di investimento.*")
