@@ -162,7 +162,7 @@ with st.expander("📊 Calcolatore Professionale Obbligazioni (con Data Emission
         nominal_value = st.number_input(
             "Valore Nominale (€)", 
             min_value=0.01, 
-            value=100.00,  # Changed to €100
+            value=100.00,
             step=10.00,
             key="prof_bond_nominal"
         )
@@ -171,7 +171,7 @@ with st.expander("📊 Calcolatore Professionale Obbligazioni (con Data Emission
             "Tasso Cedolare Annuo (%)", 
             min_value=0.0, 
             max_value=50.0,
-            value=2.500,  # Changed to 2.5%
+            value=2.500,
             step=0.001,
             key="prof_bond_coupon"
         )
@@ -179,7 +179,7 @@ with st.expander("📊 Calcolatore Professionale Obbligazioni (con Data Emission
         purchase_price = st.number_input(
             "Prezzo Clean di Acquisto (€)", 
             min_value=0.01, 
-            value=100.359,  # Changed to actual market price
+            value=100.359,
             step=0.001,
             key="prof_bond_price"
         )
@@ -198,15 +198,15 @@ with st.expander("📊 Calcolatore Professionale Obbligazioni (con Data Emission
         # Issue date
         issue_date = st.date_input(
             "📅 Data di Emissione", 
-            value=date(2024, 2, 1),  # 01/02/2024
+            value=date(2024, 2, 1),
             key="prof_bond_issue_date",
             format="DD/MM/YYYY"
         )
         
-        # First coupon date (can be different from regular schedule)
+        # First coupon date
         first_coupon_date = st.date_input(
             "🎯 Data Primo Pagamento Interessi", 
-            value=date(2025, 3, 19),  # 19/03/2025
+            value=date(2025, 3, 19),
             key="prof_bond_first_coupon",
             format="DD/MM/YYYY"
         )
@@ -214,7 +214,7 @@ with st.expander("📊 Calcolatore Professionale Obbligazioni (con Data Emission
         # Purchase date
         purchase_date = st.date_input(
             "🛒 Data di Acquisto", 
-            value=date(2025, 8, 6),  # 06/08/2025
+            value=date(2025, 8, 6),
             key="prof_bond_purchase_date",
             format="DD/MM/YYYY"
         )
@@ -222,7 +222,7 @@ with st.expander("📊 Calcolatore Professionale Obbligazioni (con Data Emission
         # Maturity date
         maturity_date = st.date_input(
             "⏰ Data di Scadenza", 
-            value=date(2026, 3, 19),  # 19/03/2026
+            value=date(2026, 3, 19),
             min_value=purchase_date,
             key="prof_bond_maturity_date",
             format="DD/MM/YYYY"
@@ -231,7 +231,7 @@ with st.expander("📊 Calcolatore Professionale Obbligazioni (con Data Emission
     with col3:
         st.write("**📊 Informazioni Calcolate**")
         
-        # Calculate some preliminary info
+        # Calculate preliminary info
         days_since_issue = (purchase_date - issue_date).days
         days_to_maturity = (maturity_date - purchase_date).days
         years_to_maturity = days_to_maturity / 365.25
@@ -278,7 +278,7 @@ with st.expander("📊 Calcolatore Professionale Obbligazioni (con Data Emission
             last_coupon, next_coupon = find_last_coupon_before_purchase(coupon_dates, purchase_date)
             
             # Calculate precise accrued interest
-            if last_coupon:  # Only if there was a previous coupon payment
+            if last_coupon:
                 accrued_interest = calculate_precise_accrued_interest(
                     nominal_value, coupon_rate, last_coupon, purchase_date, next_coupon
                 )
@@ -320,10 +320,9 @@ with st.expander("📊 Calcolatore Professionale Obbligazioni (con Data Emission
             else:
                 coupon_per_period = annual_coupon
             
-            # Calculate periods to maturity for YTM (more accurate)
+            # Calculate periods to maturity for YTM
             years_to_maturity_exact = days_to_maturity / 365.25
             
-            # For YTM calculation, use exact time to maturity
             if coupon_frequency == "Semestrale":
                 periods_to_maturity = years_to_maturity_exact * 2
             elif coupon_frequency == "Trimestrale":
@@ -331,25 +330,19 @@ with st.expander("📊 Calcolatore Professionale Obbligazioni (con Data Emission
             else:
                 periods_to_maturity = years_to_maturity_exact
             
-            # Calculate total expected returns
+            # Calculate total future coupons
             total_future_coupons = coupon_per_period * remaining_coupons
-            capital_gain_loss = nominal_value - purchase_price
-            total_return = total_future_coupons + capital_gain_loss
-            total_return_percentage = (total_return / purchase_price) * 100
             
-            # Calculate total future cash flows (what you'll actually receive)
+            # Calculate total future cash flows
             total_future_cash_flows = total_future_coupons + nominal_value
             
-            # Calculate YTM using corrected linear method (market standard)
+            # Calculate YTM using linear method
             if days_to_maturity > 0:
                 ytm = calculate_ytm_linear(dirty_price, nominal_value, total_future_cash_flows, days_to_maturity)
             else:
                 ytm = 0
             
-            # Calculate current yield
-            current_yield = (annual_coupon / purchase_price) * 100
-            
-            # Display comprehensive results
+            # Display results
             st.success("**🎯 Risultati Calcolo Professionale Obbligazione**")
             
             # Create detailed results layout
@@ -361,14 +354,14 @@ with st.expander("📊 Calcolatore Professionale Obbligazioni (con Data Emission
                 st.write(f"• Primo Pagamento Interessi: {first_coupon_date.strftime('%d/%m/%Y')}")
                 st.write(f"• Data Acquisto: {purchase_date.strftime('%d/%m/%Y')}")
                 st.write(f"• Data Scadenza: {maturity_date.strftime('%d/%m/%Y')}")
-            if last_coupon:
-                st.write(f"• Ultimo Pagamento Cedola: {last_coupon.strftime('%d/%m/%Y')}")
-            else:
-                st.write("• **Nessuna cedola ancora pagata**")
-            if next_coupon:
-                st.write(f"• Prossima Cedola: {next_coupon.strftime('%d/%m/%Y')}")
-            else:
-                st.write(f"• Prossima Cedola: {first_coupon_date.strftime('%d/%m/%Y')}")
+                if last_coupon:
+                    st.write(f"• Ultimo Pagamento Cedola: {last_coupon.strftime('%d/%m/%Y')}")
+                else:
+                    st.write("• **Nessuna cedola ancora pagata**")
+                if next_coupon:
+                    st.write(f"• Prossima Cedola: {next_coupon.strftime('%d/%m/%Y')}")
+                else:
+                    st.write(f"• Prossima Cedola: {first_coupon_date.strftime('%d/%m/%Y')}")
                 st.write(f"• **Cedole Rimanenti: {remaining_coupons}**")
                 
             with res_col2:
@@ -382,16 +375,11 @@ with st.expander("📊 Calcolatore Professionale Obbligazioni (con Data Emission
                 
             with res_col3:
                 st.write("**📈 Rendimenti e Metriche:**")
-                # Calculate holding period yield (based on dirty price - actual amount paid)
-                holding_period_yield = (total_return / dirty_price) * 100
+                # Calculate total capital at end of investment (coupons + principal repayment)
+                total_capital_at_end = total_future_coupons + nominal_value
                 
                 st.write(f"• **YTM (Yield to Maturity): {ytm:.3%}**")
-                st.write(f"• Current Yield: {current_yield:.2f}%")
-                st.write(f"• **Yield Periodo Detenzione: {holding_period_yield:.3f}%**")
-                st.write(f"• Cedole Future Totali: €{total_future_coupons:.2f}")
-                st.write(f"• Capital Gain/Loss: €{capital_gain_loss:.2f}")
-                st.write(f"• **Rendimento Totale: €{total_return:.2f}**")
-                st.write(f"• **Rendimento Totale %: {total_return_percentage:.2f}%**")
+                st.write(f"• **Capitale Totale a Fine Investimento: €{total_capital_at_end:.2f}**")
                 
             # Calculate current yield
             current_yield = (annual_coupon / purchase_price) * 100
@@ -462,7 +450,7 @@ with st.expander("📊 Calcolatore Professionale Obbligazioni (con Data Emission
         except Exception as e:
             st.error(f"❌ Errore nel calcolo professionale: {str(e)}")
             st.error("Verifica che tutte le date e i valori siano corretti.")
-            st.exception(e)  # For debugging
+            st.exception(e)
 
 st.markdown("---")
 
