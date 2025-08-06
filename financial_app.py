@@ -151,6 +151,12 @@ with st.expander("🏘️ Calcolo Investimento Immobiliare", expanded=False):
             valore_corrente = valore_immobile
             affitto_corrente = affitto_lordo
             
+            # Initialize costs that will be adjusted for inflation every 5 years
+            costi_assicurazione_correnti = costi_assicurazione
+            costi_condominiali_correnti = costi_condominiali
+            costi_aggiuntivi_correnti = costi_aggiuntivi
+            tassa_proprieta_corrente = tassa_proprieta
+            
             # Lists to store annual data
             valori_annuali = []
             affitti_netti_annuali = []
@@ -161,10 +167,23 @@ with st.expander("🏘️ Calcolo Investimento Immobiliare", expanded=False):
                 # Update property value with appreciation
                 valore_corrente = valore_corrente * (1 + rivalutazione_decimal)
                 
+                # Adjust costs for inflation every 5 years
+                if anno % 5 == 0:
+                    inflazione_5anni = (1 + inflazione_decimal) ** 5
+                    costi_assicurazione_correnti = costi_assicurazione * (inflazione_5anni ** (anno // 5))
+                    costi_condominiali_correnti = costi_condominiali * (inflazione_5anni ** (anno // 5))
+                    costi_aggiuntivi_correnti = costi_aggiuntivi * (inflazione_5anni ** (anno // 5))
+                    tassa_proprieta_corrente = tassa_proprieta * (inflazione_5anni ** (anno // 5))
+                elif anno == 1:
+                    # First year, use initial values
+                    costi_assicurazione_correnti = costi_assicurazione
+                    costi_condominiali_correnti = costi_condominiali
+                    costi_aggiuntivi_correnti = costi_aggiuntivi
+                    tassa_proprieta_corrente = tassa_proprieta
+                
                 # Adjust rent every 4 years based on new property value
                 if anno % 4 == 0:
                     # Calculate new rent as percentage of current property value
-                    # Assuming initial rent was about 6% of property value, maintain same ratio
                     rapporto_affitto_iniziale = affitto_lordo / valore_immobile
                     affitto_corrente = valore_corrente * rapporto_affitto_iniziale
                 
@@ -174,11 +193,11 @@ with st.expander("🏘️ Calcolo Investimento Immobiliare", expanded=False):
                 # Calculate taxes on rent
                 tasse_affitto = affitto_effettivo * tassazione_decimal
                 
-                # Calculate annual costs
+                # Calculate annual costs (with inflation-adjusted values)
                 manutenzione_annua = valore_corrente * manutenzione_decimal
-                costi_totali_annui = (costi_assicurazione + costi_condominiali + 
-                                    manutenzione_annua + costi_aggiuntivi + 
-                                    tassa_proprieta + tasse_affitto)
+                costi_totali_annui = (costi_assicurazione_correnti + costi_condominiali_correnti + 
+                                    manutenzione_annua + costi_aggiuntivi_correnti + 
+                                    tassa_proprieta_corrente + tasse_affitto)
                 
                 # Calculate net annual rent
                 affitto_netto = affitto_effettivo - costi_totali_annui
@@ -255,16 +274,33 @@ with st.expander("🏘️ Calcolo Investimento Immobiliare", expanded=False):
                 ultima_manutenzione = valori_annuali[-1] * manutenzione_decimal
                 ultimo_affitto_effettivo = affitto_corrente * (1 - periodo_sfitto_decimal)
                 ultime_tasse_affitto = ultimo_affitto_effettivo * tassazione_decimal
-                ultimi_costi_totali = (costi_assicurazione + costi_condominiali + 
-                                     ultima_manutenzione + costi_aggiuntivi + 
-                                     tassa_proprieta + ultime_tasse_affitto)
                 
-                st.write(f"• Assicurazione: €{costi_assicurazione:,.2f}")
-                st.write(f"• Spese Condominiali: €{costi_condominiali:,.2f}")
+                # Calculate final adjusted costs (based on inflation adjustments)
+                adeguamenti_inflazione = anni_investimento // 5
+                if adeguamenti_inflazione > 0:
+                    inflazione_totale = (1 + inflazione_decimal) ** (5 * adeguamenti_inflazione)
+                    costi_assicurazione_finali = costi_assicurazione * inflazione_totale
+                    costi_condominiali_finali = costi_condominiali * inflazione_totale
+                    costi_aggiuntivi_finali = costi_aggiuntivi * inflazione_totale
+                    tassa_proprieta_finale = tassa_proprieta * inflazione_totale
+                else:
+                    costi_assicurazione_finali = costi_assicurazione
+                    costi_condominiali_finali = costi_condominiali
+                    costi_aggiuntivi_finali = costi_aggiuntivi
+                    tassa_proprieta_finale = tassa_proprieta
+                
+                ultimi_costi_totali = (costi_assicurazione_finali + costi_condominiali_finali + 
+                                     ultima_manutenzione + costi_aggiuntivi_finali + 
+                                     tassa_proprieta_finale + ultime_tasse_affitto)
+                
+                st.write(f"• Assicurazione: €{costi_assicurazione_finali:,.2f}")
+                st.write(f"• Spese Condominiali: €{costi_condominiali_finali:,.2f}")
                 st.write(f"• Manutenzione Straordinaria: €{ultima_manutenzione:,.2f}")
-                st.write(f"• Costi Aggiuntivi: €{costi_aggiuntivi:,.2f}")
-                st.write(f"• **Tassa di Proprietà: €{tassa_proprieta:,.2f}**")
+                st.write(f"• Costi Aggiuntivi: €{costi_aggiuntivi_finali:,.2f}")
+                st.write(f"• **Tassa di Proprietà: €{tassa_proprieta_finale:,.2f}**")
                 st.write(f"• **Tasse su Affitti ({tassazione_affitti_perc}%): €{ultime_tasse_affitto:,.2f}**")
+                if adeguamenti_inflazione > 0:
+                    st.write(f"• *Costi adeguati {adeguamenti_inflazione} volte per inflazione*")
             
             with cost_col2:
                 st.write(f"• **Totale Costi Annui: €{ultimi_costi_totali:,.2f}**")
