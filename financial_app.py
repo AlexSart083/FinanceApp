@@ -331,6 +331,12 @@ with st.expander("📊 Calcolatore Professionale Obbligazioni (con Data Emission
             else:
                 periods_to_maturity = years_to_maturity_exact
             
+            # Calculate total expected returns
+            total_future_coupons = coupon_per_period * remaining_coupons
+            capital_gain_loss = nominal_value - purchase_price
+            total_return = total_future_coupons + capital_gain_loss
+            total_return_percentage = (total_return / purchase_price) * 100
+            
             # Calculate total future cash flows (what you'll actually receive)
             total_future_cash_flows = total_future_coupons + nominal_value
             
@@ -339,12 +345,6 @@ with st.expander("📊 Calcolatore Professionale Obbligazioni (con Data Emission
                 ytm = calculate_ytm_simple(purchase_price, nominal_value, total_future_cash_flows, days_to_maturity)
             else:
                 ytm = 0
-            
-            # Calculate total expected returns
-            total_future_coupons = coupon_per_period * remaining_coupons
-            capital_gain_loss = nominal_value - purchase_price
-            total_return = total_future_coupons + capital_gain_loss
-            total_return_percentage = (total_return / purchase_price) * 100
             
             # Calculate current yield
             current_yield = (annual_coupon / purchase_price) * 100
