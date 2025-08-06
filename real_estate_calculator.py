@@ -432,9 +432,6 @@ def display_additional_analysis(results, params):
     
     # Disclaimer finale per IMU
     st.info("""
-    **RICORDA:** Il calcolo della **Tassa Catastale/IMU** in questo strumento è semplificato. 
-    Nella realtà, l'IMU si basa sulla **rendita catastale** e non direttamente sul valore di mercato dell'immobile. 
-    
-    **Per calcoli precisi dell'IMU, consultare sempre un consulente fiscale qualificato.**
+    **RICORDA:** I valori calcolati e visualizzati potrebbero essere imprecisi, incompleti o contenere errori. Le formule utilizzate sono semplificate e potrebbero non riflettere la complessità del mercat0 reali.
     """)
     
