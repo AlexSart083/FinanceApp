@@ -4,7 +4,7 @@ from financial_utils import (
     calculate_ytm_linear, generate_coupon_dates, find_last_coupon_before_purchase,
     calculate_precise_accrued_interest, count_remaining_coupons
 )
-from .ui_components import format_currency, format_percentage
+from ui_components import format_currency, format_percentage
 
 def render_bond_section():
     """Render basic bond calculator section"""
