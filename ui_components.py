@@ -10,7 +10,7 @@ def setup_page_config():
 
 def render_header():
     """Render the main header of the application"""
-    st.title("🏦 Calcolatore Finanziario Avanzato")
+    st.title("🏦 Calcolatore Finanziario")
     st.markdown("---")
 
 def render_footer():
