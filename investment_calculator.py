@@ -4,7 +4,7 @@ from ui_components import format_currency, format_percentage
 
 def render_compound_interest_section():
     """Render compound interest calculator section"""
-    with st.expander("📈 Calcolo Interesse Composto (con Investimento Ricorrente)", expanded=False):
+    with st.expander("📈 Calcolo Interesse Composto", expanded=False):
         st.subheader("Calcolo Investimento con Interesse Composto")
         
         col1, col2 = st.columns(2)
