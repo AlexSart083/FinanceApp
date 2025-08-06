@@ -6,16 +6,6 @@ def render_real_estate_section():
     with st.expander("🏘️ Calcolo Investimento Immobiliare", expanded=False):
         st.subheader("Analisi Investimento Immobiliare")
         st.info("💡 Calcolo completo con rivalutazione, inflazione e adeguamento affitti")
-        
-        # Disclaimer IMU/Tassa Catastale
-        st.warning("""
-        **Disclaimer: Calcolo semplificato IMU**
-
-        Il calcolo dell'**IMU** in questa applicazione è basato su un **valore semplificato dell'immobile**. È importante sapere che per il calcolo ufficiale dell'imposta si utilizza la **rendita catastale** dell'immobile, un dato che potrebbe non coincidere con il valore di mercato.
-        Le aliquote, le esenzioni e le normative possono variare a seconda del Comune e della specifica situazione del contribuente.
-        **Avvertenza**: Questa applicazione fornisce solo una stima indicativa e non deve essere considerata un calcolo ufficiale. Per la determinazione precisa e l'adempimento degli obblighi fiscali, si raccomanda di consultare la documentazione catastale ufficiale e di rivolgersi a un professionista fiscale (CAF o commercialista).
-        """)
-        
         col1, col2, col3 = st.columns(3)
         
         with col1:
@@ -23,7 +13,7 @@ def render_real_estate_section():
             
             valore_immobile = st.number_input(
                 "Valore Immobile (€)", 
-                min_value=1000.00, 
+                min_value=5000.00, 
                 value=200000.00,
                 step=5000.00,
                 key="real_estate_value"
@@ -40,7 +30,7 @@ def render_real_estate_section():
             rivalutazione_annua = st.number_input(
                 "Rivalutazione Annua (%)", 
                 min_value=0.0, 
-                max_value=20.0,
+                max_value=50.0,
                 value=2.5,
                 step=0.1,
                 key="real_estate_appreciation"
@@ -60,17 +50,17 @@ def render_real_estate_section():
             costi_assicurazione_perc = st.number_input(
                 "Costi Assicurazione Annui (% valore immobile)", 
                 min_value=0.0, 
-                max_value=5.0,
+                max_value=30.0,
                 value=0.5,
                 step=0.1,
                 key="real_estate_insurance_perc"
             )
             
             costi_annui_perc = st.number_input(
-                "Costi Annui (% valore immobile)", 
+                "Costi Gestione Annui (% valore immobile)", 
                 min_value=0.0, 
-                max_value=10.0,
-                value=1.0,
+                max_value=30.0,
+                value=0.5,
                 step=0.1,
                 key="real_estate_annual_costs_perc"
             )
@@ -78,8 +68,8 @@ def render_real_estate_section():
             manutenzione_straordinaria_perc = st.number_input(
                 "Manutenzione Straordinaria Annua (%)", 
                 min_value=0.0, 
-                max_value=10.0,
-                value=0.5,
+                max_value=30.0,
+                value=1.0,
                 step=0.1,
                 key="real_estate_maintenance"
             )
@@ -96,11 +86,11 @@ def render_real_estate_section():
             tassa_catastale_perc = st.number_input(
                 "Tassa Catastale/IMU (% valore immobile)", 
                 min_value=0.0, 
-                max_value=5.0,
+                max_value=99.0,
                 value=0.8,
                 step=0.1,
                 key="real_estate_cadastral_tax",
-                help="⚠️ Valore semplificato - nella realtà dipende dalla rendita catastale"
+                help="⚠️ Valore semplificato -  Il calcolo dell'**IMU** in questa applicazione è basato su un **valore semplificato dell'immobile**. È importante sapere che per il calcolo ufficiale dell'imposta si utilizza la **rendita catastale** dell'immobile, un dato che potrebbe non coincidere con il valore di mercato. "
             )
         
         with col3:
@@ -127,7 +117,7 @@ def render_real_estate_section():
             adeguamento_affitto_anni = st.number_input(
                 "Adeguamento Affitto ogni (Anni)", 
                 min_value=1, 
-                max_value=20,
+                max_value=99,
                 value=4,
                 step=1,
                 key="real_estate_rent_adjustment_years",
@@ -279,8 +269,8 @@ def display_real_estate_results(results, params):
         st.write(f"• Valore Iniziale: {format_currency(params['valore_immobile'])}")
         st.write(f"• **Valore Finale (Nominale): {format_currency(results['valore_finale_nominale'])}**")
         st.write(f"• **Valore Finale (Reale): {format_currency(results['valore_finale_reale'])}**")
-        st.write(f"• Guadagno Capitale (Nominale): {format_currency(results['guadagno_capitale_nominale'])}")
-        st.write(f"• Guadagno Capitale (Reale): {format_currency(results['guadagno_capitale_reale'])}")
+        st.write(f"• Plusvalenza (Nominale): {format_currency(results['guadagno_capitale_nominale'])}")
+        st.write(f"• Plusvalenza (Reale): {format_currency(results['guadagno_capitale_reale'])}")
         rivalutazione_totale = ((results['valore_finale_nominale']/params['valore_immobile'] - 1) * 100) if params['valore_immobile'] > 0 else 0
         st.write(f"• Rivalutazione Totale: {format_percentage(rivalutazione_totale)}")
     
