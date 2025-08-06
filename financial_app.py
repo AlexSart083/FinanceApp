@@ -14,72 +14,16 @@ st.set_page_config(
 st.title("🏦 Calcolatore Finanziario Avanzato")
 st.markdown("---")
 
-# Corrected YTM calculation function
-def calculate_ytm_corrected(clean_price, nominal_value, coupon_rate, days_to_maturity, remaining_coupons, annual_coupon):
-    """Calculate YTM with correct methodology matching market standards"""
+# Simple and accurate YTM calculation
+def calculate_ytm_simple(clean_price, nominal_value, total_future_cash_flows, days_to_maturity):
+    """Simple YTM calculation using actual cash flows and time"""
     
     years_to_maturity = days_to_maturity / 365.25
     
-    # For bonds with one coupon payment remaining (like our example)
-    if remaining_coupons == 1:
-        # Simple case: one coupon + principal at maturity
-        total_return_at_maturity = annual_coupon + nominal_value
-        
-        # YTM formula for single period: (Future Value / Present Value)^(1/time) - 1
-        ytm = (total_return_at_maturity / clean_price) ** (1 / years_to_maturity) - 1
-        return ytm
+    # YTM formula: (Future Value / Present Value)^(1/time) - 1
+    ytm = (total_future_cash_flows / clean_price) ** (1 / years_to_maturity) - 1
     
-    # For multiple coupon payments, use iterative method
-    # Initial guess based on approximation
-    ytm_guess = (annual_coupon + (nominal_value - clean_price) / years_to_maturity) / clean_price
-    
-    # Newton-Raphson method for multiple periods
-    for iteration in range(100):
-        present_value = 0
-        derivative = 0
-        
-        # Calculate PV of future coupon payments
-        coupon_per_period = annual_coupon  # For annual coupons
-        
-        # For each remaining coupon
-        time_elapsed = 0
-        for i in range(remaining_coupons):
-            if i == remaining_coupons - 1:
-                # Last coupon comes with principal
-                cash_flow = coupon_per_period + nominal_value
-                time_to_payment = years_to_maturity
-            else:
-                # Regular coupon payment
-                cash_flow = coupon_per_period
-                time_to_payment = years_to_maturity - (i * (years_to_maturity / remaining_coupons))
-            
-            discount_factor = (1 + ytm_guess) ** time_to_payment
-            present_value += cash_flow / discount_factor
-            derivative -= time_to_payment * cash_flow / (discount_factor * (1 + ytm_guess))
-        
-        # Price difference
-        price_diff = present_value - clean_price
-        
-        # Check convergence
-        if abs(price_diff) < 0.001:
-            break
-        
-        # Prevent division by zero
-        if abs(derivative) < 1e-10:
-            break
-        
-        # Newton-Raphson update
-        ytm_new = ytm_guess - (price_diff / derivative)
-        
-        # Keep YTM reasonable
-        ytm_new = max(-0.5, min(1.0, ytm_new))
-        
-        if abs(ytm_new - ytm_guess) < 0.000001:
-            break
-        
-        ytm_guess = ytm_new
-    
-    return ytm_guess
+    return ytm
 
 # Function to calculate YTM using Newton-Raphson method
 def calculate_ytm(price, nominal_value, coupon_rate, periods_to_maturity, coupon_frequency):
@@ -387,9 +331,12 @@ with st.expander("📊 Calcolatore Professionale Obbligazioni (con Data Emission
             else:
                 periods_to_maturity = years_to_maturity_exact
             
-            # Calculate YTM with corrected method
-            if remaining_coupons > 0:
-                ytm = calculate_ytm_corrected(purchase_price, nominal_value, coupon_rate, days_to_maturity, remaining_coupons, annual_coupon)
+            # Calculate total future cash flows (what you'll actually receive)
+            total_future_cash_flows = total_future_coupons + nominal_value
+            
+            # Calculate YTM using simple, accurate method
+            if days_to_maturity > 0:
+                ytm = calculate_ytm_simple(purchase_price, nominal_value, total_future_cash_flows, days_to_maturity)
             else:
                 ytm = 0
             
