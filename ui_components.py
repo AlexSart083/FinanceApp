@@ -51,6 +51,8 @@ python-dateutil>=2.8.2""", language="txt")
     💡 **Raccomandazione**: Prima di prendere qualsiasi decisione finanziaria, consultare SEMPRE un consulente finanziario qualificato e autorizzato.
     
     📋 **Uso a Proprio Rischio**: L'utilizzo di questa applicazione avviene sotto la completa responsabilità dell'utente.
+    
+    🔒 **Privacy dei Dati**: I dati inseriti nell'applicazione non vengono salvati, archiviati o trasmessi in alcun modo dal sistema o dall'applicazione stessa.
     """)
     
     st.markdown("---")
