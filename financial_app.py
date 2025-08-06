@@ -14,6 +14,67 @@ st.set_page_config(
 st.title("🏦 Calcolatore Finanziario Avanzato")
 st.markdown("---")
 
+# Improved YTM calculation function
+def calculate_ytm_improved(price, nominal_value, coupon_rate, years_to_maturity, remaining_coupons, coupon_per_period):
+    """Calculate YTM with improved accuracy for short-term bonds"""
+    
+    # For very short-term bonds (< 1 year), use simple approximation
+    if years_to_maturity <= 1.0:
+        # Simple YTM approximation for short-term bonds
+        total_cash_flows = (remaining_coupons * coupon_per_period) + nominal_value
+        total_return = total_cash_flows - price
+        ytm = total_return / (price * years_to_maturity)
+        return ytm
+    
+    # For longer-term bonds, use Newton-Raphson method
+    annual_coupon = nominal_value * (coupon_rate / 100)
+    
+    # Initial guess based on current yield
+    ytm_guess = annual_coupon / price
+    
+    # Newton-Raphson iteration
+    for iteration in range(100):
+        # Calculate present value of all cash flows
+        pv_total = 0
+        pv_derivative = 0
+        
+        # Present value of remaining coupons
+        for i in range(remaining_coupons):
+            time_to_payment = years_to_maturity * (i + 1) / remaining_coupons
+            discount_factor = (1 + ytm_guess) ** time_to_payment
+            pv_total += coupon_per_period / discount_factor
+            pv_derivative -= time_to_payment * coupon_per_period / (discount_factor * (1 + ytm_guess))
+        
+        # Present value of principal at maturity
+        discount_factor_principal = (1 + ytm_guess) ** years_to_maturity
+        pv_total += nominal_value / discount_factor_principal
+        pv_derivative -= years_to_maturity * nominal_value / (discount_factor_principal * (1 + ytm_guess))
+        
+        # Price difference
+        price_difference = pv_total - price
+        
+        # Check for convergence
+        if abs(price_difference) < 0.001:
+            break
+            
+        # Avoid division by zero
+        if abs(pv_derivative) < 1e-10:
+            break
+        
+        # Newton-Raphson update
+        ytm_new = ytm_guess - (price_difference / pv_derivative)
+        
+        # Ensure YTM stays reasonable (between -50% and +50%)
+        ytm_new = max(-0.5, min(0.5, ytm_new))
+        
+        # Check for convergence in YTM
+        if abs(ytm_new - ytm_guess) < 0.0001:
+            break
+            
+        ytm_guess = ytm_new
+    
+    return ytm_guess
+
 # Function to calculate YTM using Newton-Raphson method
 def calculate_ytm(price, nominal_value, coupon_rate, periods_to_maturity, coupon_frequency):
     """Calculate Yield to Maturity using iterative method"""
@@ -295,16 +356,22 @@ with st.expander("📊 Calcolatore Professionale Obbligazioni (con Data Emission
             # Count remaining coupons
             remaining_coupons = count_remaining_coupons(coupon_dates, purchase_date)
             
-            # Calculate periods to maturity for YTM
-            if coupon_frequency == "Semestrale":
-                periods_to_maturity = days_to_maturity / 182.5
-            elif coupon_frequency == "Trimestrale":
-                periods_to_maturity = days_to_maturity / 91.25
-            else:
-                periods_to_maturity = days_to_maturity / 365.25
+            # Calculate periods to maturity for YTM (more accurate)
+            years_to_maturity_exact = days_to_maturity / 365.25
             
-            # Calculate YTM
-            ytm = calculate_ytm(purchase_price, nominal_value, coupon_rate, periods_to_maturity, coupon_frequency)
+            # For YTM calculation, use exact time to maturity
+            if coupon_frequency == "Semestrale":
+                periods_to_maturity = years_to_maturity_exact * 2
+            elif coupon_frequency == "Trimestrale":
+                periods_to_maturity = years_to_maturity_exact * 4
+            else:
+                periods_to_maturity = years_to_maturity_exact
+            
+            # Calculate YTM with more robust method
+            if periods_to_maturity > 0:
+                ytm = calculate_ytm_improved(purchase_price, nominal_value, coupon_rate, years_to_maturity_exact, remaining_coupons, coupon_per_period)
+            else:
+                ytm = 0
             
             # Calculate annual coupon and coupon per period
             annual_coupon = nominal_value * (coupon_rate / 100)
@@ -364,6 +431,10 @@ with st.expander("📊 Calcolatore Professionale Obbligazioni (con Data Emission
                 st.write(f"• Capital Gain/Loss: €{capital_gain_loss:.2f}")
                 st.write(f"• **Rendimento Totale: €{total_return:.2f}**")
                 st.write(f"• **Rendimento Totale %: {total_return_percentage:.2f}%**")
+                st.write(f"• **YTM Verifica**: {(total_return/purchase_price)/years_to_maturity:.3%} (semplificato)")
+                
+            # Calculate current yield
+            current_yield = (annual_coupon / purchase_price) * 100
             
             # Additional analysis
             st.write("**📊 Analisi Aggiuntiva:**")
