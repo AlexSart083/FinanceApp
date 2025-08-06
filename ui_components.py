@@ -27,10 +27,6 @@ def render_footer():
     - **Current Yield**: Rendimento annuale delle cedole rispetto al prezzo di acquisto
     """)
 
-    st.markdown("### 📦 Requirements.txt per Deploy:")
-    st.code("""streamlit>=1.28.0
-python-dateutil>=2.8.2""", language="txt")
-
     # Disclaimer migliorato
     st.markdown("---")
     st.markdown("### ⚠️ **DISCLAIMER IMPORTANTE**")
