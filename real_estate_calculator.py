@@ -7,6 +7,15 @@ def render_real_estate_section():
         st.subheader("Analisi Investimento Immobiliare")
         st.info("💡 Calcolo completo con rivalutazione, inflazione e adeguamento affitti")
         
+        # Disclaimer IMU/Tassa Catastale
+        st.warning("""
+        **Disclaimer: Calcolo semplificato IMU**
+
+        Il calcolo dell'**IMU** in questa applicazione è basato su un **valore semplificato dell'immobile**. È importante sapere che per il calcolo ufficiale dell'imposta si utilizza la **rendita catastale** dell'immobile, un dato che potrebbe non coincidere con il valore di mercato.
+        Le aliquote, le esenzioni e le normative possono variare a seconda del Comune e della specifica situazione del contribuente.
+        **Avvertenza**: Questa applicazione fornisce solo una stima indicativa e non deve essere considerata un calcolo ufficiale. Per la determinazione precisa e l'adempimento degli obblighi fiscali, si raccomanda di consultare la documentazione catastale ufficiale e di rivolgersi a un professionista fiscale (CAF o commercialista).
+        """)
+        
         col1, col2, col3 = st.columns(3)
         
         with col1:
@@ -85,12 +94,13 @@ def render_real_estate_section():
             )
             
             tassa_catastale_perc = st.number_input(
-                "Tassa Catastale (% valore immobile)", 
+                "Tassa Catastale/IMU (% valore immobile)", 
                 min_value=0.0, 
                 max_value=5.0,
                 value=0.8,
                 step=0.1,
-                key="real_estate_cadastral_tax"
+                key="real_estate_cadastral_tax",
+                help="⚠️ Valore semplificato - nella realtà dipende dalla rendita catastale"
             )
         
         with col3:
@@ -114,8 +124,19 @@ def render_real_estate_section():
                 key="real_estate_inflation"
             )
             
+            adeguamento_affitto_anni = st.number_input(
+                "Adeguamento Affitto ogni (Anni)", 
+                min_value=1, 
+                max_value=20,
+                value=4,
+                step=1,
+                key="real_estate_rent_adjustment_years",
+                help="Ogni quanti anni l'affitto viene adeguato al valore rivalutato dell'immobile"
+            )
+            
             st.write("**ℹ️ Note:**")
-            st.write("• L'affitto si adegua ogni 4 anni")
+            st.write("• L'affitto si adegua in base")
+            st.write("• agli anni specificati")
             st.write("• al valore rivalutato dell'immobile")
             st.write("• Costi percentuali si aggiornano")
             st.write("• al valore dell'immobile")
@@ -135,7 +156,8 @@ def render_real_estate_section():
                     'tassazione_affitti_perc': tassazione_affitti_perc,
                     'tassa_catastale_perc': tassa_catastale_perc,
                     'periodo_sfitto_perc': periodo_sfitto_perc,
-                    'inflazione_perc': inflazione_perc
+                    'inflazione_perc': inflazione_perc,
+                    'adeguamento_affitto_anni': adeguamento_affitto_anni
                 }
                 results = calculate_real_estate_investment(params)
                 display_real_estate_results(results, params)
@@ -178,8 +200,8 @@ def calculate_real_estate_investment(params):
         costi_annui_correnti = valore_corrente * costi_annui_decimal
         tassa_catastale_corrente = valore_corrente * tassa_catastale_decimal
         
-        # Adjust rent every 4 years based on new property value
-        if anno % 4 == 0:
+        # Adjust rent every X years based on new property value
+        if anno % params['adeguamento_affitto_anni'] == 0:
             # Calculate new rent as percentage of current property value
             rapporto_affitto_iniziale = params['affitto_lordo'] / params['valore_immobile']
             affitto_corrente = valore_corrente * rapporto_affitto_iniziale
@@ -269,8 +291,8 @@ def display_real_estate_results(results, params):
         st.write(f"• **Totale Affitti Netti {params['anni_investimento']} anni: {format_currency(results['totale_affitti_netti'])}**")
         st.write(f"• **Rendimento Medio Annuo: {format_percentage(results['rendimento_medio_annuo'])}**")
         st.write(f"• Periodo Sfitto Considerato: {format_percentage(params['periodo_sfitto_perc'])}")
-        adeguamenti = params['anni_investimento'] // 4
-        st.write(f"• Adeguamenti Affitto: {adeguamenti} volte")
+        adeguamenti = params['anni_investimento'] // params['adeguamento_affitto_anni']
+        st.write(f"• Adeguamenti Affitto: {adeguamenti} volte (ogni {params['adeguamento_affitto_anni']} anni)")
     
     with res_col3:
         st.write("**📈 Rendimento Totale:**")
@@ -325,7 +347,7 @@ def display_cost_breakdown(results, params):
         st.write(f"• Assicurazione ({format_percentage(params['costi_assicurazione_perc'])}): {format_currency(costi_assicurazione_finali)}")
         st.write(f"• Costi Annui ({format_percentage(params['costi_annui_perc'])}): {format_currency(costi_annui_finali)}")
         st.write(f"• Manutenzione Straordinaria ({format_percentage(params['manutenzione_straordinaria_perc'])}): {format_currency(ultima_manutenzione)}")
-        st.write(f"• **Tassa Catastale ({format_percentage(params['tassa_catastale_perc'])}): {format_currency(tassa_catastale_finale)}**")
+        st.write(f"• **Tassa Catastale/IMU ({format_percentage(params['tassa_catastale_perc'])}): {format_currency(tassa_catastale_finale)}** ⚠️")
         st.write(f"• **Tasse su Affitti ({format_percentage(params['tassazione_affitti_perc'])}): {format_currency(ultime_tasse_affitto)}**")
         st.write("• *Costi calcolati su valore finale immobile*")
     
@@ -417,3 +439,12 @@ def display_additional_analysis(results, params):
             st.info("📊 CAGR reale positivo ma basso")
         else:
             st.error("📉 CAGR reale negativo - perdita di valore")
+    
+    # Disclaimer finale per IMU
+    st.info("""
+    **RICORDA:** Il calcolo della **Tassa Catastale/IMU** in questo strumento è semplificato. 
+    Nella realtà, l'IMU si basa sulla **rendita catastale** e non direttamente sul valore di mercato dell'immobile. 
+    
+    **Per calcoli precisi dell'IMU, consultare sempre un consulente fiscale qualificato.**
+    """)
+    
