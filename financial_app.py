@@ -429,13 +429,16 @@ with st.expander("📊 Calcolatore Professionale Obbligazioni (con Data Emission
                 
             with res_col3:
                 st.write("**📈 Rendimenti e Metriche:**")
+                # Calculate holding period yield
+                holding_period_yield = (total_return / purchase_price) * 100
+                
                 st.write(f"• **YTM (Yield to Maturity): {ytm:.3%}**")
                 st.write(f"• Current Yield: {current_yield:.2f}%")
+                st.write(f"• **Yield Periodo Detenzione: {holding_period_yield:.3f}%**")
                 st.write(f"• Cedole Future Totali: €{total_future_coupons:.2f}")
                 st.write(f"• Capital Gain/Loss: €{capital_gain_loss:.2f}")
                 st.write(f"• **Rendimento Totale: €{total_return:.2f}**")
                 st.write(f"• **Rendimento Totale %: {total_return_percentage:.2f}%**")
-                st.write(f"• **YTM Verifica**: {(total_return/purchase_price)/years_to_maturity:.3%} (semplificato)")
                 
             # Calculate current yield
             current_yield = (annual_coupon / purchase_price) * 100
