@@ -1,6 +1,6 @@
 import streamlit as st
 from datetime import date
-from .financial_utils import (
+from financial_utils import (
     calculate_ytm_linear, generate_coupon_dates, find_last_coupon_before_purchase,
     calculate_precise_accrued_interest, count_remaining_coupons
 )
