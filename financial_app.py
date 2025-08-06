@@ -14,16 +14,16 @@ st.set_page_config(
 st.title("🏦 Calcolatore Finanziario Avanzato")
 st.markdown("---")
 
-# Simple and accurate YTM calculation
-def calculate_ytm_simple(clean_price, nominal_value, total_future_cash_flows, days_to_maturity):
-    """Simple YTM calculation using actual cash flows and time"""
+# Corrected YTM calculation with proper formula
+def calculate_ytm_linear(dirty_price, nominal_value, total_future_cash_flows, days_to_maturity):
+    """Calculate YTM using linear approximation formula (market standard for short-term bonds)"""
     
-    years_to_maturity = days_to_maturity / 365.25
-    
-    # YTM formula: (Future Value / Present Value)^(1/time) - 1
-    ytm = (total_future_cash_flows / clean_price) ** (1 / years_to_maturity) - 1
-    
-    return ytm
+    # Linear YTM formula: (Future Cash Flow / Dirty Price - 1) * (365 / days)
+    if days_to_maturity > 0 and dirty_price > 0:
+        ytm = ((total_future_cash_flows / dirty_price) - 1) * (365 / days_to_maturity)
+        return ytm
+    else:
+        return 0
 
 # Function to calculate YTM using Newton-Raphson method
 def calculate_ytm(price, nominal_value, coupon_rate, periods_to_maturity, coupon_frequency):
@@ -340,9 +340,9 @@ with st.expander("📊 Calcolatore Professionale Obbligazioni (con Data Emission
             # Calculate total future cash flows (what you'll actually receive)
             total_future_cash_flows = total_future_coupons + nominal_value
             
-            # Calculate YTM using simple, accurate method
+            # Calculate YTM using corrected linear method (market standard)
             if days_to_maturity > 0:
-                ytm = calculate_ytm_simple(purchase_price, nominal_value, total_future_cash_flows, days_to_maturity)
+                ytm = calculate_ytm_linear(dirty_price, nominal_value, total_future_cash_flows, days_to_maturity)
             else:
                 ytm = 0
             
