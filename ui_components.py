@@ -14,18 +14,6 @@ def render_header():
     st.markdown("---")
 
 def render_footer():
-    """Render the footer with notes and requirements"""
-    st.markdown("---")
-    st.markdown("### 📝 Note:")
-    st.info("""
-    - **TAN (Tasso Annuo Nominale)**: Il tasso di interesse puro del prestito
-    - **TAEG (Tasso Annuo Effettivo Globale)**: Include tutti i costi del finanziamento
-    - **YTM (Yield to Maturity)**: Rendimento effettivo dell'obbligazione se mantenuta fino alla scadenza
-    - **CAGR (Compound Annual Growth Rate)**: Tasso di crescita annuale composto
-    - **Prezzo Clean**: Prezzo dell'obbligazione senza rateo interessi
-    - **Prezzo Dirty**: Prezzo Clean + rateo interessi maturati
-    - **Current Yield**: Rendimento annuale delle cedole rispetto al prezzo di acquisto
-    """)
 
     # Disclaimer migliorato
     st.markdown("---")
@@ -50,7 +38,18 @@ def render_footer():
     
     🔒 **Privacy dei Dati**: I dati inseriti nell'applicazione non vengono salvati, archiviati o trasmessi in alcun modo dal sistema o dall'applicazione stessa.
     """)
-    
+"""Render the footer with notes and requirements"""
+    st.markdown("---")
+    st.markdown("### 📝 Note:")
+    st.info("""
+    - **TAN (Tasso Annuo Nominale)**: Il tasso di interesse puro del prestito
+    - **TAEG (Tasso Annuo Effettivo Globale)**: Include tutti i costi del finanziamento
+    - **YTM (Yield to Maturity)**: Rendimento effettivo dell'obbligazione se mantenuta fino alla scadenza
+    - **CAGR (Compound Annual Growth Rate)**: Tasso di crescita annuale composto
+    - **Prezzo Clean**: Prezzo dell'obbligazione senza rateo interessi
+    - **Prezzo Dirty**: Prezzo Clean + rateo interessi maturati
+    - **Current Yield**: Rendimento annuale delle cedole rispetto al prezzo di acquisto
+    """)
     st.markdown("---")
     st.markdown("*Sviluppata da **AS** con la collaborazione di **KIM** 🐱 - Versione per fini didattici © 2025*")
 
