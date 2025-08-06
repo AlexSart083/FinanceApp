@@ -378,8 +378,12 @@ with st.expander("📊 Calcolatore Professionale Obbligazioni (con Data Emission
                 # Calculate total capital at end of investment (coupons + principal repayment)
                 total_capital_at_end = total_future_coupons + nominal_value
                 
+                # Calculate total gain (total capital at end - dirty price paid)
+                total_gain = total_capital_at_end - dirty_price
+                
                 st.write(f"• **YTM (Yield to Maturity): {ytm:.3%}**")
                 st.write(f"• **Capitale Totale a Fine Investimento: €{total_capital_at_end:.2f}**")
+                st.write(f"• **Guadagno Totale a Fine Investimento: €{total_gain:.2f}**")
                 
             # Calculate current yield
             current_yield = (annual_coupon / purchase_price) * 100
