@@ -249,21 +249,24 @@ with st.expander("📊 Calcolatore Professionale Obbligazioni (con Data Emission
         issue_date = st.date_input(
             "📅 Data di Emissione", 
             value=date.today() - relativedelta(years=2),
-            key="prof_bond_issue_date"
+            key="prof_bond_issue_date",
+            format="DD/MM/YYYY"
         )
         
         # First coupon date (can be different from regular schedule)
         first_coupon_date = st.date_input(
             "🎯 Data Primo Pagamento Interessi", 
             value=issue_date + relativedelta(months=6),
-            key="prof_bond_first_coupon"
+            key="prof_bond_first_coupon",
+            format="DD/MM/YYYY"
         )
         
         # Purchase date
         purchase_date = st.date_input(
             "🛒 Data di Acquisto", 
             value=date.today(),
-            key="prof_bond_purchase_date"
+            key="prof_bond_purchase_date",
+            format="DD/MM/YYYY"
         )
         
         # Maturity date
@@ -271,7 +274,8 @@ with st.expander("📊 Calcolatore Professionale Obbligazioni (con Data Emission
             "⏰ Data di Scadenza", 
             value=issue_date + relativedelta(years=10),
             min_value=purchase_date,
-            key="prof_bond_maturity_date"
+            key="prof_bond_maturity_date",
+            format="DD/MM/YYYY"
         )
     
     with col3:
@@ -356,6 +360,16 @@ with st.expander("📊 Calcolatore Professionale Obbligazioni (con Data Emission
             # Count remaining coupons
             remaining_coupons = count_remaining_coupons(coupon_dates, purchase_date)
             
+            # Calculate annual coupon and coupon per period
+            annual_coupon = nominal_value * (coupon_rate / 100)
+            
+            if coupon_frequency == "Semestrale":
+                coupon_per_period = annual_coupon / 2
+            elif coupon_frequency == "Trimestrale":
+                coupon_per_period = annual_coupon / 4
+            else:
+                coupon_per_period = annual_coupon
+            
             # Calculate periods to maturity for YTM (more accurate)
             years_to_maturity_exact = days_to_maturity / 365.25
             
@@ -372,16 +386,6 @@ with st.expander("📊 Calcolatore Professionale Obbligazioni (con Data Emission
                 ytm = calculate_ytm_improved(purchase_price, nominal_value, coupon_rate, years_to_maturity_exact, remaining_coupons, coupon_per_period)
             else:
                 ytm = 0
-            
-            # Calculate annual coupon and coupon per period
-            annual_coupon = nominal_value * (coupon_rate / 100)
-            
-            if coupon_frequency == "Semestrale":
-                coupon_per_period = annual_coupon / 2
-            elif coupon_frequency == "Trimestrale":
-                coupon_per_period = annual_coupon / 4
-            else:
-                coupon_per_period = annual_coupon
             
             # Calculate total expected returns
             total_future_coupons = coupon_per_period * remaining_coupons
