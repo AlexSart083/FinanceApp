@@ -60,20 +60,22 @@ with st.expander("🏘️ Calcolo Investimento Immobiliare", expanded=False):
     with col2:
         st.write("**💸 Costi e Spese**")
         
-        costi_assicurazione = st.number_input(
-            "Costi Assicurazione Annui (€)", 
-            min_value=0.00, 
-            value=500.00,
-            step=50.00,
-            key="real_estate_insurance"
+        costi_assicurazione_perc = st.number_input(
+            "Costi Assicurazione Annui (% valore immobile)", 
+            min_value=0.0, 
+            max_value=5.0,
+            value=0.5,
+            step=0.1,
+            key="real_estate_insurance_perc"
         )
         
-        costi_condominiali = st.number_input(
-            "Costi Condominiali Annui (€)", 
-            min_value=0.00, 
-            value=1200.00,
-            step=100.00,
-            key="real_estate_condo"
+        costi_annui_perc = st.number_input(
+            "Costi Annui (% valore immobile)", 
+            min_value=0.0, 
+            max_value=10.0,
+            value=1.0,
+            step=0.1,
+            key="real_estate_annual_costs_perc"
         )
         
         manutenzione_straordinaria_perc = st.number_input(
@@ -85,14 +87,6 @@ with st.expander("🏘️ Calcolo Investimento Immobiliare", expanded=False):
             key="real_estate_maintenance"
         )
         
-        costi_aggiuntivi = st.number_input(
-            "Costi Aggiuntivi Annui (€)", 
-            min_value=0.00, 
-            value=300.00,
-            step=50.00,
-            key="real_estate_additional"
-        )
-        
         tassazione_affitti_perc = st.number_input(
             "Tassazione su Affitti (%)", 
             min_value=0.0, 
@@ -102,12 +96,13 @@ with st.expander("🏘️ Calcolo Investimento Immobiliare", expanded=False):
             key="real_estate_tax_rate"
         )
         
-        tassa_proprieta = st.number_input(
-            "Tassa di Proprietà Annua (€)", 
-            min_value=0.00, 
-            value=800.00,
-            step=50.00,
-            key="real_estate_property_tax"
+        tassa_catastale_perc = st.number_input(
+            "Tassa Catastale (% valore immobile)", 
+            min_value=0.0, 
+            max_value=5.0,
+            value=0.8,
+            step=0.1,
+            key="real_estate_cadastral_tax"
         )
     
     with col3:
@@ -134,10 +129,10 @@ with st.expander("🏘️ Calcolo Investimento Immobiliare", expanded=False):
         st.write("**ℹ️ Note:**")
         st.write("• L'affitto si adegua ogni 4 anni")
         st.write("• al valore rivalutato dell'immobile")
-        st.write("• Costi fissi adeguati ogni 5 anni")
-        st.write("• all'inflazione")
-        st.write("• Manutenzione calcolata sul valore")
-        st.write("• dell'immobile rivalutato")
+        st.write("• Costi percentuali si aggiornano")
+        st.write("• al valore dell'immobile")
+        st.write("• Manutenzione e tassa catastale")
+        st.write("• calcolate su valore corrente")
     
     # Real Estate calculations
     if st.button("🏠 Calcola Investimento Immobiliare", key="calc_real_estate"):
@@ -149,15 +144,14 @@ with st.expander("🏘️ Calcolo Investimento Immobiliare", expanded=False):
             manutenzione_decimal = manutenzione_straordinaria_perc / 100
             tassazione_decimal = tassazione_affitti_perc / 100
             
+            # Convert cost percentages to decimals
+            costi_assicurazione_decimal = costi_assicurazione_perc / 100
+            costi_annui_decimal = costi_annui_perc / 100
+            tassa_catastale_decimal = tassa_catastale_perc / 100
+            
             # Initialize variables for year-by-year calculation
             valore_corrente = valore_immobile
             affitto_corrente = affitto_lordo
-            
-            # Initialize costs that will be adjusted for inflation every 5 years
-            costi_assicurazione_correnti = costi_assicurazione
-            costi_condominiali_correnti = costi_condominiali
-            costi_aggiuntivi_correnti = costi_aggiuntivi
-            tassa_proprieta_corrente = tassa_proprieta
             
             # Lists to store annual data
             valori_annuali = []
@@ -169,19 +163,10 @@ with st.expander("🏘️ Calcolo Investimento Immobiliare", expanded=False):
                 # Update property value with appreciation
                 valore_corrente = valore_corrente * (1 + rivalutazione_decimal)
                 
-                # Adjust costs for inflation every 5 years
-                if anno % 5 == 0:
-                    inflazione_5anni = (1 + inflazione_decimal) ** 5
-                    costi_assicurazione_correnti = costi_assicurazione * (inflazione_5anni ** (anno // 5))
-                    costi_condominiali_correnti = costi_condominiali * (inflazione_5anni ** (anno // 5))
-                    costi_aggiuntivi_correnti = costi_aggiuntivi * (inflazione_5anni ** (anno // 5))
-                    tassa_proprieta_corrente = tassa_proprieta * (inflazione_5anni ** (anno // 5))
-                elif anno == 1:
-                    # First year, use initial values
-                    costi_assicurazione_correnti = costi_assicurazione
-                    costi_condominiali_correnti = costi_condominiali
-                    costi_aggiuntivi_correnti = costi_aggiuntivi
-                    tassa_proprieta_corrente = tassa_proprieta
+                # Calculate costs as percentages of current property value (updated annually)
+                costi_assicurazione_correnti = valore_corrente * costi_assicurazione_decimal
+                costi_annui_correnti = valore_corrente * costi_annui_decimal
+                tassa_catastale_corrente = valore_corrente * tassa_catastale_decimal
                 
                 # Adjust rent every 4 years based on new property value
                 if anno % 4 == 0:
@@ -195,11 +180,11 @@ with st.expander("🏘️ Calcolo Investimento Immobiliare", expanded=False):
                 # Calculate taxes on rent
                 tasse_affitto = affitto_effettivo * tassazione_decimal
                 
-                # Calculate annual costs (with inflation-adjusted values)
+                # Calculate annual costs (all based on current property value)
                 manutenzione_annua = valore_corrente * manutenzione_decimal
-                costi_totali_annui = (costi_assicurazione_correnti + costi_condominiali_correnti + 
-                                    manutenzione_annua + costi_aggiuntivi_correnti + 
-                                    tassa_proprieta_corrente + tasse_affitto)
+                costi_totali_annui = (costi_assicurazione_correnti + costi_annui_correnti + 
+                                    manutenzione_annua + tassa_catastale_corrente + 
+                                    tasse_affitto)
                 
                 # Calculate net annual rent
                 affitto_netto = affitto_effettivo - costi_totali_annui
@@ -277,32 +262,21 @@ with st.expander("🏘️ Calcolo Investimento Immobiliare", expanded=False):
                 ultimo_affitto_effettivo = affitto_corrente * (1 - periodo_sfitto_decimal)
                 ultime_tasse_affitto = ultimo_affitto_effettivo * tassazione_decimal
                 
-                # Calculate final adjusted costs (based on inflation adjustments)
-                adeguamenti_inflazione = anni_investimento // 5
-                if adeguamenti_inflazione > 0:
-                    inflazione_totale = (1 + inflazione_decimal) ** (5 * adeguamenti_inflazione)
-                    costi_assicurazione_finali = costi_assicurazione * inflazione_totale
-                    costi_condominiali_finali = costi_condominiali * inflazione_totale
-                    costi_aggiuntivi_finali = costi_aggiuntivi * inflazione_totale
-                    tassa_proprieta_finale = tassa_proprieta * inflazione_totale
-                else:
-                    costi_assicurazione_finali = costi_assicurazione
-                    costi_condominiali_finali = costi_condominiali
-                    costi_aggiuntivi_finali = costi_aggiuntivi
-                    tassa_proprieta_finale = tassa_proprieta
+                # Calculate final costs based on final property value
+                costi_assicurazione_finali = valori_annuali[-1] * costi_assicurazione_decimal
+                costi_annui_finali = valori_annuali[-1] * costi_annui_decimal
+                tassa_catastale_finale = valori_annuali[-1] * tassa_catastale_decimal
                 
-                ultimi_costi_totali = (costi_assicurazione_finali + costi_condominiali_finali + 
-                                     ultima_manutenzione + costi_aggiuntivi_finali + 
-                                     tassa_proprieta_finale + ultime_tasse_affitto)
+                ultimi_costi_totali = (costi_assicurazione_finali + costi_annui_finali + 
+                                     ultima_manutenzione + tassa_catastale_finale + 
+                                     ultime_tasse_affitto)
                 
-                st.write(f"• Assicurazione: €{costi_assicurazione_finali:,.2f}")
-                st.write(f"• Spese Condominiali: €{costi_condominiali_finali:,.2f}")
-                st.write(f"• Manutenzione Straordinaria: €{ultima_manutenzione:,.2f}")
-                st.write(f"• Costi Aggiuntivi: €{costi_aggiuntivi_finali:,.2f}")
-                st.write(f"• **Tassa di Proprietà: €{tassa_proprieta_finale:,.2f}**")
+                st.write(f"• Assicurazione ({costi_assicurazione_perc}%): €{costi_assicurazione_finali:,.2f}")
+                st.write(f"• Costi Annui ({costi_annui_perc}%): €{costi_annui_finali:,.2f}")
+                st.write(f"• Manutenzione Straordinaria ({manutenzione_straordinaria_perc}%): €{ultima_manutenzione:,.2f}")
+                st.write(f"• **Tassa Catastale ({tassa_catastale_perc}%): €{tassa_catastale_finale:,.2f}**")
                 st.write(f"• **Tasse su Affitti ({tassazione_affitti_perc}%): €{ultime_tasse_affitto:,.2f}**")
-                if adeguamenti_inflazione > 0:
-                    st.write(f"• *Costi adeguati {adeguamenti_inflazione} volte per inflazione*")
+                st.write(f"• *Costi calcolati su valore finale immobile*")
             
             with cost_col2:
                 st.write(f"• **Totale Costi Annui: €{ultimi_costi_totali:,.2f}**")
@@ -316,6 +290,10 @@ with st.expander("🏘️ Calcolo Investimento Immobiliare", expanded=False):
                 rendimento_netto_finale = (affitti_netti_annuali[-1] / valore_immobile) * 100
                 st.write(f"• Rendimento Lordo: {rendimento_lordo_finale:.2f}%")
                 st.write(f"• **Rendimento Netto: {rendimento_netto_finale:.2f}%**")
+                
+                # Show percentage breakdown of costs
+                total_cost_perc = (ultimi_costi_totali / ultimo_affitto_effettivo) * 100 if ultimo_affitto_effettivo > 0 else 0
+                st.write(f"• **% Costi su Affitto Effettivo: {total_cost_perc:.1f}%**")
             
             # Additional analysis
             st.write("**📊 Analisi Aggiuntiva:**")
@@ -335,6 +313,11 @@ with st.expander("🏘️ Calcolo Investimento Immobiliare", expanded=False):
                 # Break-even analysis
                 break_even_years = valore_immobile / (sum(affitti_netti_annuali) / anni_investimento) if sum(affitti_netti_annuali) > 0 else float('inf')
                 st.write(f"• Payback Period: {break_even_years:.1f} anni")
+                
+                # Cost structure analysis
+                total_costs_perc = (costi_assicurazione_perc + costi_annui_perc + 
+                                   manutenzione_straordinaria_perc + tassa_catastale_perc)
+                st.write(f"• **Costi Totali (% valore): {total_costs_perc:.2f}%**")
             
             with analysis_col2:
                 st.write("**⚠️ Considerazioni:**")
@@ -352,6 +335,14 @@ with st.expander("🏘️ Calcolo Investimento Immobiliare", expanded=False):
                     st.warning("⚠️ Rivalutazione < Inflazione: perdita valore reale")
                 else:
                     st.info("✅ Rivalutazione > Inflazione: mantenimento valore reale")
+                
+                # Cost efficiency warning
+                if total_costs_perc > 4:
+                    st.warning("⚠️ Costi totali elevati (> 4% valore immobile)")
+                elif total_costs_perc < 2:
+                    st.success("✅ Struttura costi efficiente (< 2%)")
+                else:
+                    st.info("ℹ️ Struttura costi nella media (2-4%)")
             
         except Exception as e:
             st.error(f"❌ Errore nel calcolo immobiliare: {str(e)}")
