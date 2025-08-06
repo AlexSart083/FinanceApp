@@ -1,18 +1,3 @@
-import streamlit as st
-
-def setup_page_config():
-    """Configure the Streamlit page settings"""
-    st.set_page_config(
-        page_title="Calcolatore Finanziario",
-        page_icon="💰",
-        layout="wide"
-    )
-
-def render_header():
-    """Render the main header of the application"""
-    st.title("🏦 Calcolatore Finanziario Avanzato")
-    st.markdown("---")
-
 def render_footer():
     """Render the footer with notes and requirements"""
     st.markdown("---")
@@ -31,36 +16,27 @@ def render_footer():
     st.code("""streamlit>=1.28.0
 python-dateutil>=2.8.2""", language="txt")
 
-    st.markdown("*Sviluppato per calcoli finanziari di base. Consultare sempre un consulente finanziario qualificato per decisioni di investimento.*")
-
-def display_results_section(title, results_data):
-    """Display results in a formatted section
+    # Disclaimer migliorato
+    st.markdown("---")
+    st.markdown("### ⚠️ **DISCLAIMER IMPORTANTE**")
+    st.error("""
+    **🚨 AVVISO LEGALE - LEGGERE ATTENTAMENTE**
     
-    Args:
-        title (str): Section title
-        results_data (dict): Dictionary with column data
-    """
-    st.success(f"**{title}**")
+    📚 **Scopo Didattico**: Questa applicazione è stata sviluppata esclusivamente a scopo educativo e dimostrativo per illustrare concetti finanziari di base.
     
-    if len(results_data) == 2:
-        col1, col2 = st.columns(2)
-        cols = [col1, col2]
-    elif len(results_data) == 3:
-        col1, col2, col3 = st.columns(3)
-        cols = [col1, col2, col3]
-    else:
-        cols = [st]  # Use single column for other cases
+    🚫 **Non è Consulenza Finanziaria**: I calcoli e le informazioni fornite NON costituiscono consigli di investimento, raccomandazioni finanziarie o consulenza professionale di alcun tipo.
     
-    for i, (col_title, col_data) in enumerate(results_data.items()):
-        with cols[i % len(cols)]:
-            st.write(f"**{col_title}:**")
-            for line in col_data:
-                st.write(line)
-
-def format_currency(value):
-    """Format value as currency"""
-    return f"€{value:,.2f}"
-
-def format_percentage(value, decimals=2):
-    """Format value as percentage"""
-    return f"{value:.{decimals}f}%"
+    ⚠️ **Accuratezza dei Dati**: I valori calcolati e visualizzati potrebbero essere imprecisi, incompleti o contenere errori. Le formule utilizzate sono semplificate e potrebbero non riflettere la complessità dei mercati finanziari reali.
+    
+    📊 **Responsabilità**: Lo sviluppatore declina ogni responsabilità per:
+    - Eventuali perdite finanziarie derivanti dall'uso di questa applicazione
+    - Imprecisioni nei calcoli o negli algoritmi implementati  
+    - Decisioni di investimento basate sui risultati ottenuti
+    
+    💡 **Raccomandazione**: Prima di prendere qualsiasi decisione finanziaria, consultare SEMPRE un consulente finanziario qualificato e autorizzato.
+    
+    📋 **Uso a Proprio Rischio**: L'utilizzo di questa applicazione avviene sotto la completa responsabilità dell'utente.
+    """)
+    
+    st.markdown("---")
+    st.markdown("*Sviluppata da **AS** con la collaborazione di **KIM** 🐱 - Versione per fini didattici © 2025*")
