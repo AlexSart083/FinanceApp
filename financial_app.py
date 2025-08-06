@@ -162,7 +162,7 @@ with st.expander("📊 Calcolatore Professionale Obbligazioni (con Data Emission
         nominal_value = st.number_input(
             "Valore Nominale (€)", 
             min_value=0.01, 
-            value=1000.00,
+            value=100.00,  # Changed to €100
             step=10.00,
             key="prof_bond_nominal"
         )
@@ -171,16 +171,16 @@ with st.expander("📊 Calcolatore Professionale Obbligazioni (con Data Emission
             "Tasso Cedolare Annuo (%)", 
             min_value=0.0, 
             max_value=50.0,
-            value=3.5,
-            step=0.01,
+            value=2.500,  # Changed to 2.5%
+            step=0.001,
             key="prof_bond_coupon"
         )
         
         purchase_price = st.number_input(
             "Prezzo Clean di Acquisto (€)", 
             min_value=0.01, 
-            value=975.00,
-            step=0.01,
+            value=100.359,  # Changed to actual market price
+            step=0.001,
             key="prof_bond_price"
         )
         
@@ -198,7 +198,7 @@ with st.expander("📊 Calcolatore Professionale Obbligazioni (con Data Emission
         # Issue date
         issue_date = st.date_input(
             "📅 Data di Emissione", 
-            value=date.today() - relativedelta(years=2),
+            value=date(2024, 2, 1),  # 01/02/2024
             key="prof_bond_issue_date",
             format="DD/MM/YYYY"
         )
@@ -206,7 +206,7 @@ with st.expander("📊 Calcolatore Professionale Obbligazioni (con Data Emission
         # First coupon date (can be different from regular schedule)
         first_coupon_date = st.date_input(
             "🎯 Data Primo Pagamento Interessi", 
-            value=issue_date + relativedelta(months=6),
+            value=date(2025, 3, 19),  # 19/03/2025
             key="prof_bond_first_coupon",
             format="DD/MM/YYYY"
         )
@@ -214,7 +214,7 @@ with st.expander("📊 Calcolatore Professionale Obbligazioni (con Data Emission
         # Purchase date
         purchase_date = st.date_input(
             "🛒 Data di Acquisto", 
-            value=date.today(),
+            value=date(2025, 8, 6),  # 06/08/2025
             key="prof_bond_purchase_date",
             format="DD/MM/YYYY"
         )
@@ -222,7 +222,7 @@ with st.expander("📊 Calcolatore Professionale Obbligazioni (con Data Emission
         # Maturity date
         maturity_date = st.date_input(
             "⏰ Data di Scadenza", 
-            value=issue_date + relativedelta(years=10),
+            value=date(2026, 3, 19),  # 19/03/2026
             min_value=purchase_date,
             key="prof_bond_maturity_date",
             format="DD/MM/YYYY"
