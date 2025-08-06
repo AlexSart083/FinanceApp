@@ -1,5 +1,5 @@
 import streamlit as st
-from .ui_components import format_currency, format_percentage
+from ui_components import format_currency, format_percentage
 
 def render_real_estate_section():
     """Render real estate investment calculator section"""
