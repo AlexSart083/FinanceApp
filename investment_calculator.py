@@ -3,13 +3,15 @@ from financial_utils import calculate_compound_interest, calculate_cagr
 from ui_components import format_currency, format_percentage
 
 def render_compound_interest_section():
-    """Render compound interest calculator section"""
+    """Render compound interest calculator section with inflation analysis"""
     with st.expander("📈 Calcolo Interesse Composto", expanded=False):
         st.subheader("Calcolo Investimento con Interesse Composto")
+        st.info("💡 Calcolo completo con analisi inflazione e potere d'acquisto reale")
         
-        col1, col2 = st.columns(2)
+        col1, col2, col3 = st.columns(3)
         
         with col1:
+            st.write("**💰 Parametri Investimento**")
             initial_investment = st.number_input(
                 "Somma Iniziale Investita (€)", 
                 min_value=0.00, 
@@ -26,8 +28,7 @@ def render_compound_interest_section():
                 step=0.1,
                 key="compound_rate"
             )
-        
-        with col2:
+            
             investment_years = st.number_input(
                 "Numero di Anni", 
                 min_value=1, 
@@ -35,21 +36,67 @@ def render_compound_interest_section():
                 step=1,
                 key="compound_years"
             )
-            
+        
+        with col2:
+            st.write("**🔄 Investimenti Ricorrenti**")
             recurring_investment = st.number_input(
-                "Investimento Ricorrente Annuo (€) - Opzionale", 
+                "Investimento Ricorrente Annuo (€)", 
                 min_value=0.00, 
-                value=0.00,
+                value=1200.00,
                 step=100.00,
-                key="compound_recurring"
+                key="compound_recurring",
+                help="Importo investito ogni anno in aggiunta al capitale iniziale"
+            )
+            
+            recurring_frequency = st.selectbox(
+                "Frequenza Investimenti Ricorrenti",
+                ["Annuale", "Mensile"],
+                index=0,
+                key="compound_frequency",
+                help="Frequenza con cui vengono effettuati gli investimenti ricorrenti"
             )
         
-        if st.button("Calcola Interesse Composto", key="calc_compound"):
+        with col3:
+            st.write("**📊 Parametri Economici**")
+            inflation_rate = st.number_input(
+                "Tasso di Inflazione Annuo (%)", 
+                min_value=0.0, 
+                max_value=20.0,
+                value=2.0,
+                step=0.1,
+                key="compound_inflation",
+                help="Tasso di inflazione medio atteso per il periodo"
+            )
+            
+            # Calcolo automatico del rendimento reale
+            real_return = interest_rate_annual - inflation_rate
+            if real_return >= 0:
+                st.success(f"📈 **Rendimento Reale:** {format_percentage(real_return)}")
+            else:
+                st.error(f"📉 **Rendimento Reale:** {format_percentage(real_return)}")
+                st.warning("⚠️ Rendimento negativo dopo inflazione!")
+            
+            st.write("**ℹ️ Note:**")
+            st.write("• Rendimento reale = Rendimento nominale - Inflazione")
+            st.write("• Valori reali mostrano il potere d'acquisto effettivo")
+        
+        if st.button("📊 Calcola Interesse Composto con Inflazione", key="calc_compound"):
             try:
-                results = calculate_compound_interest(
-                    initial_investment, interest_rate_annual, investment_years, recurring_investment
+                # Adatta il calcolo in base alla frequenza
+                if recurring_frequency == "Mensile":
+                    monthly_investment = recurring_investment / 12
+                    adjusted_recurring = recurring_investment
+                else:
+                    monthly_investment = 0
+                    adjusted_recurring = recurring_investment
+                
+                results = calculate_compound_interest_with_inflation(
+                    initial_investment, interest_rate_annual, investment_years, 
+                    adjusted_recurring, inflation_rate, recurring_frequency
                 )
-                display_compound_interest_results(results, interest_rate_annual, investment_years)
+                display_compound_interest_results_with_inflation(
+                    results, interest_rate_annual, inflation_rate, investment_years
+                )
             except Exception as e:
                 st.error("Errore nel calcolo. Verifica i valori inseriti.")
                 st.exception(e)
@@ -96,63 +143,156 @@ def render_cagr_section():
                 st.error("Errore nel calcolo. Verifica i valori inseriti.")
                 st.exception(e)
 
-def display_compound_interest_results(results, interest_rate_annual, investment_years):
-    """Display compound interest calculation results"""
-    st.success("**Risultati Interesse Composto:**")
+def calculate_compound_interest_with_inflation(initial_investment, interest_rate_annual, 
+                                             investment_years, recurring_investment=0, 
+                                             inflation_rate=2.0, frequency="Annuale"):
+    """Calculate future value with compound interest, recurring investments and inflation analysis"""
     
-    # Show warning for negative interest rates
-    if interest_rate_annual < 0:
-        st.warning(f"⚠️ **Tasso di interesse negativo ({format_percentage(interest_rate_annual)})** - L'investimento perde valore nel tempo!")
+    # Calcoli nominali (senza considerare inflazione)
+    base_results = calculate_compound_interest(
+        initial_investment, interest_rate_annual, investment_years, recurring_investment
+    )
     
-    col1, col2 = st.columns(2)
+    # Calcoli reali (considerando inflazione)
+    real_interest_rate = interest_rate_annual - inflation_rate
+    real_results = calculate_compound_interest(
+        initial_investment, real_interest_rate, investment_years, recurring_investment
+    )
+    
+    # Calcolo del potere d'acquisto del valore futuro nominale
+    inflation_factor = (1 + inflation_rate / 100) ** investment_years
+    future_value_real_purchasing_power = base_results['total_future_value'] / inflation_factor
+    
+    # Calcolo di quanto denaro servirebbe oggi per avere lo stesso potere d'acquisto
+    equivalent_today_value = base_results['total_future_value'] / inflation_factor
+    
+    # Perdita di potere d'acquisto per l'inflazione
+    purchasing_power_loss = base_results['total_future_value'] - future_value_real_purchasing_power
+    
+    return {
+        'nominal_results': base_results,
+        'real_results': real_results,
+        'real_interest_rate': real_interest_rate,
+        'inflation_factor': inflation_factor,
+        'future_value_real_purchasing_power': future_value_real_purchasing_power,
+        'equivalent_today_value': equivalent_today_value,
+        'purchasing_power_loss': purchasing_power_loss,
+        'inflation_rate': inflation_rate
+    }
+
+def display_compound_interest_results_with_inflation(results, interest_rate_annual, 
+                                                   inflation_rate, investment_years):
+    """Display compound interest calculation results with inflation analysis"""
+    st.success("**📊 Risultati Interesse Composto con Analisi Inflazione**")
+    
+    # Show warning for negative real interest rates
+    real_rate = results['real_interest_rate']
+    if real_rate < 0:
+        st.error(f"⚠️ **Rendimento reale negativo ({format_percentage(real_rate)})** - L'investimento perde potere d'acquisto!")
+    elif real_rate < 1:
+        st.warning(f"⚠️ **Rendimento reale basso ({format_percentage(real_rate)})** - Crescita limitata del potere d'acquisto")
+    else:
+        st.success(f"✅ **Rendimento reale positivo ({format_percentage(real_rate)})** - Crescita del potere d'acquisto")
+    
+    # Risultati principali
+    col1, col2, col3 = st.columns(3)
     
     with col1:
-        st.write("**💰 Valori Finali:**")
-        st.write(f"• **Valore Futuro dell'Investimento:** {format_currency(results['total_future_value'])}")
-        st.write(f"• **Totale Investito:** {format_currency(results['total_invested'])}")
+        st.write("**💰 Valori Nominali (Senza Inflazione):**")
+        nominal = results['nominal_results']
+        st.write(f"• **Valore Futuro Nominale:** {format_currency(nominal['total_future_value'])}")
+        st.write(f"• **Totale Investito:** {format_currency(nominal['total_invested'])}")
         
-        # Color code gains/losses
-        if results['total_gains'] >= 0:
-            st.write(f"• **Guadagno Totale:** {format_currency(results['total_gains'])}")
+        if nominal['total_gains'] >= 0:
+            st.write(f"• **Guadagno Nominale:** {format_currency(nominal['total_gains'])}")
         else:
-            st.error(f"• **Perdita Totale:** {format_currency(results['total_gains'])}")
+            st.error(f"• **Perdita Nominale:** {format_currency(nominal['total_gains'])}")
         
-        st.write(f"• **Valore Futuro Investimento Iniziale:** {format_currency(results['fv_initial'])}")
-        if results['fv_recurring'] > 0:
-            st.write(f"• **Valore Futuro Investimenti Ricorrenti:** {format_currency(results['fv_recurring'])}")
+        if nominal['total_invested'] > 0:
+            nominal_return_percentage = (nominal['total_gains'] / nominal['total_invested']) * 100
+            st.write(f"• **Rendimento Nominale:** {format_percentage(nominal_return_percentage)}")
     
     with col2:
-        st.write("**📊 Analisi Performance:**")
+        st.write("**🔥 Valori Reali (Dopo Inflazione):**")
+        real = results['real_results']
+        st.write(f"• **Valore Futuro Reale:** {format_currency(real['total_future_value'])}")
+        st.write(f"• **Potere d'Acquisto Futuro:** {format_currency(results['future_value_real_purchasing_power'])}")
         
-        if interest_rate_annual < 0:
-            # Calculate how much value is lost each year
-            annual_loss_rate = abs(interest_rate_annual)
-            st.error("**⚠️ Analisi Perdite:**")
-            st.write(f"• Perdita annuale: {format_percentage(annual_loss_rate)}")
-            st.write(f"• Valore perso totale: {format_currency(abs(results['total_gains']))}")
-            if results['total_invested'] > 0:
-                loss_percentage = (abs(results['total_gains']) / results['total_invested']) * 100
-                st.write(f"• Percentuale di perdita: {format_percentage(loss_percentage)}")
+        if real['total_gains'] >= 0:
+            st.write(f"• **Guadagno Reale:** {format_currency(real['total_gains'])}")
         else:
-            # Show positive return analysis
-            if results['total_invested'] > 0:
-                total_return_percentage = (results['total_gains'] / results['total_invested']) * 100
-                st.write(f"• **Percentuale di Guadagno:** {format_percentage(total_return_percentage)}")
-                
-                # Calculate annualized return
-                if investment_years > 0:
-                    annualized_return = ((results['total_future_value'] / results['total_invested']) ** (1/investment_years) - 1) * 100
-                    st.write(f"• **Rendimento Annualizzato:** {format_percentage(annualized_return)}")
-                
-                # Performance indicators
-                if total_return_percentage > 100:
-                    st.success("🚀 Rendimento eccellente (> 100%)")
-                elif total_return_percentage > 50:
-                    st.success("✅ Rendimento molto buono (> 50%)")
-                elif total_return_percentage > 20:
-                    st.info("📈 Rendimento buono (> 20%)")
-                else:
-                    st.info("📊 Rendimento modesto")
+            st.error(f"• **Perdita Reale:** {format_currency(real['total_gains'])}")
+        
+        st.write(f"• **Perdita per Inflazione:** {format_currency(results['purchasing_power_loss'])}")
+        
+        if real['total_invested'] > 0:
+            real_return_percentage = (real['total_gains'] / real['total_invested']) * 100
+            st.write(f"• **Rendimento Reale:** {format_percentage(real_return_percentage)}")
+    
+    with col3:
+        st.write("**📊 Analisi Inflazione:**")
+        st.write(f"• **Tasso Inflazione:** {format_percentage(inflation_rate)}")
+        st.write(f"• **Fattore Inflazione {investment_years} anni:** {results['inflation_factor']:.3f}")
+        
+        # Calcolo di quanto l'euro vale meno dopo l'inflazione
+        euro_devaluation = (1 - (1 / results['inflation_factor'])) * 100
+        st.write(f"• **Svalutazione Euro:** {format_percentage(euro_devaluation)}")
+        
+        # Equivalenza di potere d'acquisto
+        st.write(f"• **{format_currency(results['nominal_results']['total_future_value'])} futuri**")
+        st.write(f"  equivalgono a **{format_currency(results['equivalent_today_value'])}** di oggi")
+        
+        # Performance comparison
+        if results['real_results']['total_gains'] > 0:
+            st.success("✅ Investimento batte l'inflazione")
+        elif results['real_results']['total_gains'] == 0:
+            st.info("⚖️ Investimento pareggia l'inflazione")
+        else:
+            st.error("❌ Investimento perde contro l'inflazione")
+    
+    # Analisi dettagliata performance
+    st.write("**📈 Analisi Performance Dettagliata:**")
+    performance_col1, performance_col2 = st.columns(2)
+    
+    with performance_col1:
+        st.write("**Confronto Rendimenti:**")
+        st.write(f"• Rendimento Nominale: {format_percentage(interest_rate_annual)}")
+        st.write(f"• Tasso Inflazione: {format_percentage(inflation_rate)}")
+        st.write(f"• **Rendimento Reale: {format_percentage(results['real_interest_rate'])}**")
+        
+        # Calcolo rendimenti annualizzati
+        if investment_years > 0:
+            nominal_annualized = ((results['nominal_results']['total_future_value'] / 
+                                 results['nominal_results']['total_invested']) ** (1/investment_years) - 1) * 100
+            real_annualized = ((results['real_results']['total_future_value'] / 
+                              results['real_results']['total_invested']) ** (1/investment_years) - 1) * 100
+            
+            st.write(f"• Rendimento Annualizzato Nominale: {format_percentage(nominal_annualized)}")
+            st.write(f"• **Rendimento Annualizzato Reale: {format_percentage(real_annualized)}**")
+    
+    with performance_col2:
+        st.write("**Impatto Inflazione:**")
+        
+        # Calcolo percentuale di perdita per inflazione
+        if results['nominal_results']['total_future_value'] > 0:
+            inflation_impact_percentage = (results['purchasing_power_loss'] / 
+                                         results['nominal_results']['total_future_value']) * 100
+            st.write(f"• Perdita % per Inflazione: {format_percentage(inflation_impact_percentage)}")
+        
+        # Anni necessari per raddoppiare il potere d'acquisto
+        if results['real_interest_rate'] > 0:
+            years_to_double_real = 72 / results['real_interest_rate']  # Regola del 72
+            st.write(f"• Anni per raddoppiare (reale): {years_to_double_real:.1f}")
+        
+        # Raccomandazioni basate sui risultati
+        if results['real_interest_rate'] < 0:
+            st.error("🚨 Considera investimenti con rendimenti più alti")
+        elif results['real_interest_rate'] < 2:
+            st.warning("⚠️ Rendimento reale modesto, valuta alternative")
+        elif results['real_interest_rate'] > 5:
+            st.success("🚀 Ottimo rendimento reale!")
+        else:
+            st.info("📊 Rendimento reale accettabile")
 
 def display_cagr_results(cagr, total_return, initial_capital, final_capital, cagr_years):
     """Display CAGR calculation results"""
