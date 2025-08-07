@@ -52,7 +52,7 @@ def render_footer():
     - **Current Yield**: Rendimento annuale delle cedole rispetto al prezzo di acquisto
     """)
     st.markdown("---")
-    st.markdown("*Sviluppata da **AS** con la collaborazione di **KIM** 🐱 - Versione per fini didattici © 2025*")
+    st.markdown("*Sviluppata da **AS** con la collaborazione di **KIM** 🐱 - Versione per fini didattici*")
 
 def display_results_section(title, results_data):
     """Display results in a formatted section
