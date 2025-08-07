@@ -91,7 +91,7 @@ def render_real_estate_section():
                 value=0.8,
                 step=0.1,
                 key="real_estate_cadastral_tax",
-                help="⚠️ Valore semplificato - Il calcolo della tassa di propietá in questa applicazione è basato sul **valore dell'immobile**. È importante sapere che per il calcolo ufficiale dell'imposta in Italia si utilizza la **rendita catastale** dell'immobile, un dato che potrebbe non coincidere con il valore di mercato."
+                help="⚠️ Valore semplificato - Il calcolo della tassa di propietá in questa applicazione è basato sul **valore dell'immobile**. È importante sapere che per il calcolo ufficiale dell'imposta in Italia é legata alla **rendita catastale** e al **coefficiente catastale** dell'immobile."
             )
             
             # Sezione Mutuo alla fine
