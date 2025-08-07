@@ -66,28 +66,6 @@ def render_real_estate_section():
                 help="Costi fissi annui (es. amministratore, pulizie, piccole manutenzioni). Verranno adeguati all'inflazione."
             )
             
-            # Sezione Mutuo
-            st.write("**🏦 Mutuo (se presente)**")
-            rata_mutuo_mensile = st.number_input(
-                "Rata Mutuo Mensile (€)", 
-                min_value=0.00, 
-                max_value=10000.00,
-                value=0.00,
-                step=50.00,
-                key="real_estate_mortgage_payment",
-                help="Rata mensile del mutuo. Se 0, nessun mutuo presente."
-            )
-            
-            anni_restanti_mutuo = st.number_input(
-                "Anni Restanti Mutuo", 
-                min_value=0, 
-                max_value=50,
-                value=0,
-                step=1,
-                key="real_estate_mortgage_years",
-                help="Numero di anni rimanenti per il mutuo. Se rata = 0, questo campo viene ignorato."
-            )
-            
             manutenzione_straordinaria_perc = st.number_input(
                 "Manutenzione Straordinaria Annua (%)", 
                 min_value=0.0, 
@@ -107,13 +85,33 @@ def render_real_estate_section():
             )
             
             tassa_catastale_perc = st.number_input(
-                "Tassa Catastale/IMU (% valore immobile)", 
+                "Tassa di propietá (% valore immobile)", 
                 min_value=0.0, 
                 max_value=99.0,
                 value=0.8,
                 step=0.1,
                 key="real_estate_cadastral_tax",
-                help="⚠️ Valore semplificato - Il calcolo dell'**IMU** in questa applicazione è basato su un **valore semplificato dell'immobile**. È importante sapere che per il calcolo ufficiale dell'imposta si utilizza la **rendita catastale** dell'immobile, un dato che potrebbe non coincidere con il valore di mercato."
+                help="⚠️ Valore semplificato - Il calcolo della tassa di propietá in questa applicazione è basato sul **valore dell'immobile**. È importante sapere che per il calcolo ufficiale dell'imposta in Italia si utilizza la **rendita catastale** dell'immobile, un dato che potrebbe non coincidere con il valore di mercato."
+            )
+            
+            # Sezione Mutuo alla fine
+            st.write("**🏦 Mutuo (se presente)**")
+            rata_mutuo_mensile = st.number_input(
+                "Rata Mutuo Mensile (€)", 
+                min_value=0.00, 
+                max_value=10000.00,
+                value=0.00,
+                step=50.00,
+                key="real_estate_mortgage_payment"
+            )
+            
+            anni_restanti_mutuo = st.number_input(
+                "Anni Restanti Mutuo", 
+                min_value=0, 
+                max_value=50,
+                value=0,
+                step=1,
+                key="real_estate_mortgage_years"
             )
         
         with col3:
