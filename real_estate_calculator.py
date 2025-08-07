@@ -315,16 +315,23 @@ def calculate_real_estate_investment_improved(params):
     # Average annual net yield
     rendimento_medio_annuo = sum(rendimenti_annuali) / len(rendimenti_annuali) if rendimenti_annuali else 0
     
-    # Total return calculation
+    # Total return calculation - CORRECTED for inflation on rents
     guadagno_capitale_nominale = valore_finale_nominale - params['valore_immobile']
     guadagno_capitale_reale = valore_finale_reale - params['valore_immobile']
     
-    rendimento_totale_nominale = totale_affitti_netti + guadagno_capitale_nominale
-    rendimento_totale_reale = totale_affitti_netti + guadagno_capitale_reale
+    # Calculate real value of total net rents (adjust each year's rent to present value)
+    totale_affitti_netti_reale = 0
+    for anno, affitto_netto_anno in enumerate(affitti_netti_annuali, 1):
+        # Discount each year's rent back to present value using inflation
+        valore_presente_affitto = affitto_netto_anno / ((1 + inflazione_decimal) ** anno)
+        totale_affitti_netti_reale += valore_presente_affitto
     
-    # CAGR calculation
+    rendimento_totale_nominale = totale_affitti_netti + guadagno_capitale_nominale
+    rendimento_totale_reale = totale_affitti_netti_reale + guadagno_capitale_reale
+    
+    # CAGR calculation - CORRECTED for real values
     cagr_nominale = ((valore_finale_nominale + totale_affitti_netti) / params['valore_immobile']) ** (1/params['anni_investimento']) - 1 if params['valore_immobile'] > 0 else 0
-    cagr_reale = ((valore_finale_reale + totale_affitti_netti) / params['valore_immobile']) ** (1/params['anni_investimento']) - 1 if params['valore_immobile'] > 0 else 0
+    cagr_reale = ((valore_finale_reale + totale_affitti_netti_reale) / params['valore_immobile']) ** (1/params['anni_investimento']) - 1 if params['valore_immobile'] > 0 else 0
     
     # Calculate rent growth analysis
     affitto_iniziale = params['affitto_lordo']
@@ -346,6 +353,7 @@ def calculate_real_estate_investment_improved(params):
         'valore_finale_nominale': valore_finale_nominale,
         'valore_finale_reale': valore_finale_reale,
         'totale_affitti_netti': totale_affitti_netti,
+        'totale_affitti_netti_reale': totale_affitti_netti_reale,
         'totale_costi_mutuo': totale_costi_mutuo,
         'rendimento_medio_annuo': rendimento_medio_annuo,
         'guadagno_capitale_nominale': guadagno_capitale_nominale,
@@ -383,7 +391,6 @@ def display_real_estate_results_simplified(results, params):
         st.write(f"• **Affitto Finale: {format_currency(results['affitto_finale'])}**")
         st.write(f"• **Crescita Affitto Totale: {format_percentage(results['crescita_affitto_totale'])}**")
         st.write(f"• **Totale Affitti Netti {params['anni_investimento']} anni: {format_currency(results['totale_affitti_netti'])}**")
-        st.write(f"• **Rendimento Medio Annuo: {format_percentage(results['rendimento_medio_annuo'])}**")
         st.write(f"• Modalità Adeguamento: **{params['tipo_adeguamento']}**")
     
     with res_col3:
@@ -515,7 +522,7 @@ def display_real_estate_results_simplified(results, params):
         # Total investment and returns summary
         investimento_totale = params['valore_immobile'] + results['totale_costi_mutuo']
         capitale_finale_affitti_nominale = results['valore_finale_nominale'] + results['totale_affitti_netti']
-        capitale_finale_affitti_reale = results['valore_finale_reale'] + results['totale_affitti_netti']
+        capitale_finale_affitti_reale = results['valore_finale_reale'] + results['totale_affitti_netti_reale']
         
         st.write(f"• **Investimento Totale: {format_currency(investimento_totale)}**")
         st.write(f"• **Capitale Finale + Affitti (Nominale): {format_currency(capitale_finale_affitti_nominale)}**")
