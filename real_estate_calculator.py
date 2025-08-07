@@ -22,7 +22,7 @@ def render_real_estate_section():
             affitto_lordo = st.number_input(
                 "Affitto Lordo Annuo (€)", 
                 min_value=0.00, 
-                value=12000.00,
+                value=14900.00,
                 step=100.00,
                 key="real_estate_rent"
             )
@@ -51,7 +51,7 @@ def render_real_estate_section():
                 "Costi Assicurazione Annui (% valore immobile)", 
                 min_value=0.0, 
                 max_value=30.0,
-                value=0.5,
+                value=0.3,
                 step=0.1,
                 key="real_estate_insurance_perc"
             )
@@ -59,7 +59,7 @@ def render_real_estate_section():
             costi_annui_perc = st.number_input(
                 "Costi Gestione Annui (% valore immobile)", 
                 min_value=0.0, 
-                max_value=30.0,
+                max_value=99.0,
                 value=0.5,
                 step=0.1,
                 key="real_estate_annual_costs_perc"
@@ -68,7 +68,7 @@ def render_real_estate_section():
             manutenzione_straordinaria_perc = st.number_input(
                 "Manutenzione Straordinaria Annua (%)", 
                 min_value=0.0, 
-                max_value=30.0,
+                max_value=99.0,
                 value=1.0,
                 step=0.1,
                 key="real_estate_maintenance"
@@ -77,7 +77,7 @@ def render_real_estate_section():
             tassazione_affitti_perc = st.number_input(
                 "Tassazione su Affitti (%)", 
                 min_value=0.0, 
-                max_value=50.0,
+                max_value=99.0,
                 value=21.0,
                 step=1.0,
                 key="real_estate_tax_rate"
@@ -108,7 +108,7 @@ def render_real_estate_section():
             inflazione_perc = st.number_input(
                 "Inflazione Annua (%)", 
                 min_value=0.0, 
-                max_value=15.0,
+                max_value=100.0,
                 value=2.0,
                 step=0.1,
                 key="real_estate_inflation"
