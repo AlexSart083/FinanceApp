@@ -105,9 +105,9 @@ def display_loan_results(results):
     with col2:
         st.write("**💸 Analisi Costi:**")
         st.write(f"• **Interessi Totali Pagati (TAN):** {format_currency(results['total_interest'])}")
-        st.write(f"• **Percentuale Interessi:** {format_percentage(results['interest_percentage'])}%")
-        st.write(f"• **TAN Annuo di Riferimento:** {format_percentage(results['tan_annual'])}%")
-        st.write(f"• **TAEG Annuo di Riferimento:** {format_percentage(results['taeg_annual'])}%")
+        st.write(f"• **Percentuale Interessi:** {format_percentage(results['interest_percentage'])}")
+        st.write(f"• **TAN Annuo di Riferimento:** {format_percentage(results['tan_annual'])}")
+        st.write(f"• **TAEG Annuo di Riferimento:** {format_percentage(results['taeg_annual'])}")
         
         # Cost analysis
         if results['interest_percentage'] > 50:
@@ -120,6 +120,6 @@ def display_loan_results(results):
         # TAEG vs TAN analysis
         taeg_tan_diff = results['taeg_annual'] - results['tan_annual']
         if taeg_tan_diff > 1:
-            st.warning(f"⚠️ TAEG significativamente > TAN (+{format_percentage(taeg_tan_diff)}%)")
+            st.warning(f"⚠️ TAEG significativamente > TAN (+{format_percentage(taeg_tan_diff)})")
         else:
-            st.info(f"ℹ️ Differenza TAEG-TAN: +{format_percentage(taeg_tan_diff)}%")
+            st.info(f"ℹ️ Differenza TAEG-TAN: +{format_percentage(taeg_tan_diff)}")
