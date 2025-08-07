@@ -566,55 +566,28 @@ def display_additional_analysis_improved(results, params):
     analysis_col1, analysis_col2 = st.columns(2)
     
     with analysis_col1:
-        # Yield analysis
-        gross_yield_initial = (params['affitto_lordo'] / params['valore_immobile']) * 100 if params['valore_immobile'] > 0 else 0
-        gross_yield_final = (results['affitto_finale'] / results['valore_finale_nominale']) * 100 if results['valore_finale_nominale'] > 0 else 0
-        
-        st.write("**📈 Analisi Rendimenti:**")
-        st.write(f"• Rendimento Lordo Iniziale: {format_percentage(gross_yield_initial)}")
-        st.write(f"• Rendimento Lordo Finale: {format_percentage(gross_yield_final)}")
-        st.write(f"• Rendimento Netto Medio: {format_percentage(results['rendimento_medio_annuo'])}")
-        
-        # Mortgage impact analysis
-        if results['totale_costi_mutuo'] > 0:
-            st.write("**🏦 Impatto Mutuo:**")
-            percentuale_mutuo_su_rendimento = (results['totale_costi_mutuo'] / abs(results['rendimento_totale_nominale'])) * 100 if results['rendimento_totale_nominale'] != 0 else 0
-            st.write(f"• Totale pagato in {params['anni_restanti_mutuo']} anni: {format_currency(results['totale_costi_mutuo'])}")
-            st.write(f"• Impatto su rendimento totale: {format_percentage(percentuale_mutuo_su_rendimento)}")
-            
-            # Calculate what the return would be without mortgage
-            rendimento_senza_mutuo = results['rendimento_totale_nominale'] + results['totale_costi_mutuo']
-            miglioramento_perc = ((rendimento_senza_mutuo / results['rendimento_totale_nominale']) - 1) * 100 if results['rendimento_totale_nominale'] > 0 else 0
-            st.write(f"• Rendimento senza mutuo: {format_currency(rendimento_senza_mutuo)}")
-            if miglioramento_perc > 0:
-                st.info(f"• Miglioramento: +{format_percentage(miglioramento_perc)}")
-        
-        # Rent adjustment effectiveness analysis
-        st.write("**🔄 Efficacia Adeguamento Affitti:**")
-        if params['tipo_adeguamento'] == "Valore Immobile":
-            variazione_rendimento = gross_yield_final - gross_yield_initial
-            if abs(variazione_rendimento) < 0.1:  # Tolleranza 0.1%
-                st.success("✅ Rendimento lordo mantenuto stabile")
-            else:
-                st.info(f"📊 Variazione rendimento: {format_percentage(variazione_rendimento)}")
-        elif params['tipo_adeguamento'] == "Inflazione":
-            # Verifica se la crescita dell'affitto ha battuto l'inflazione
-            inflazione_cumulativa = ((1 + params['inflazione_perc']/100) ** params['anni_investimento'] - 1) * 100
-            if results['crescita_affitto_totale'] >= inflazione_cumulativa:
-                st.success("✅ Affitto ha battuto/pareggiato l'inflazione")
-            else:
-                st.warning("⚠️ Affitto non ha tenuto il passo con l'inflazione")
-        else:
-            perdita_potere_acquisto = ((1 + params['inflazione_perc']/100) ** params['anni_investimento'] - 1) * 100
-            st.error(f"❌ Perdita potere d'acquisto: {format_percentage(perdita_potere_acquisto)}")
-        
         # Break-even analysis
         avg_net_rent = results['totale_affitti_netti'] / params['anni_investimento'] if params['anni_investimento'] > 0 else 0
         break_even_years = params['valore_immobile'] / avg_net_rent if avg_net_rent > 0 else float('inf')
-        if break_even_years != float('inf'):
+        if break_even_years != float('inf') and break_even_years > 0:
+            st.write("**⏱️ Analisi Temporale:**")
             st.write(f"• Payback Period: {break_even_years:.1f} anni")
+        
+        # Cost efficiency warning (excluding mortgage)
+        total_costs_perc_no_mortgage = (params['costi_assicurazione_perc'] + 
+                                       params['manutenzione_straordinaria_perc'] + 
+                                       params['tassa_catastale_perc'])
+        # Add management costs as percentage of initial property value
+        management_cost_perc = (params['costi_gestione_euro'] / params['valore_immobile']) * 100
+        total_costs_perc_no_mortgage += management_cost_perc
+        
+        st.write("**💸 Analisi Costi:**")
+        if total_costs_perc_no_mortgage > 4:
+            st.warning("⚠️ Costi totali elevati (> 4% valore immobile)")
+        elif total_costs_perc_no_mortgage < 2:
+            st.success("✅ Struttura costi efficiente (< 2%)")
         else:
-            st.write("• Payback Period: Non determinabile")
+            st.info("ℹ️ Struttura costi nella media (2-4%)")
     
     with analysis_col2:
         st.write("**⚠️ Considerazioni e Raccomandazioni:**")
@@ -810,47 +783,50 @@ def display_mortgage_comparison(results, params):
     
     with mortgage_col2:
         st.write("**💰 Scenario Alternativo (Senza Mutuo):**")
-        rendimento_senza_mutuo = results['rendimento_totale_nominale'] + results['totale_costi_mutuo']
+        rendimento_nominale_senza_mutuo = results['rendimento_totale_nominale'] + results['totale_costi_mutuo']
         affitti_netti_senza_mutuo = results['totale_affitti_netti'] + results['totale_costi_mutuo']
         
-        # Recalculate CAGR without mortgage
-        cagr_senza_mutuo = ((results['valore_finale_nominale'] + affitti_netti_senza_mutuo) / params['valore_immobile']) ** (1/params['anni_investimento']) - 1 if params['valore_immobile'] > 0 else 0
+        # Recalculate nominal CAGR without mortgage
+        cagr_nominale_senza_mutuo = ((results['valore_finale_nominale'] + affitti_netti_senza_mutuo) / params['valore_immobile']) ** (1/params['anni_investimento']) - 1 if params['valore_immobile'] > 0 else 0
         
         st.write(f"• Nessun costo mutuo: {format_currency(0)}")
-        st.write(f"• Rendimento totale: {format_currency(rendimento_senza_mutuo)}")
-        st.write(f"• CAGR nominale: {format_percentage(cagr_senza_mutuo * 100)}")
+        st.write(f"• Rendimento nominale totale: {format_currency(rendimento_nominale_senza_mutuo)}")
+        st.write(f"• CAGR nominale: {format_percentage(cagr_nominale_senza_mutuo * 100)}")
         
         flusso_senza_mutuo = affitti_netti_senza_mutuo / params['anni_investimento']
         st.write(f"• Flusso netto medio annuo: {format_currency(flusso_senza_mutuo)}")
         
-        # Show improvement
-        miglioramento_rendimento = rendimento_senza_mutuo - results['rendimento_totale_nominale']
-        miglioramento_cagr = cagr_senza_mutuo - results['cagr_nominale']
+        # Show improvement in nominal terms
+        miglioramento_rendimento = rendimento_nominale_senza_mutuo - results['rendimento_totale_nominale']
+        miglioramento_cagr = cagr_nominale_senza_mutuo - results['cagr_nominale']
         
         if miglioramento_rendimento > 0:
-            st.success(f"✅ Miglioramento rendimento: +{format_currency(miglioramento_rendimento)}")
-            st.success(f"✅ Miglioramento CAGR: +{format_percentage(miglioramento_cagr * 100)}")
+            st.success(f"✅ Miglioramento rendimento nominale: +{format_currency(miglioramento_rendimento)}")
+            st.success(f"✅ Miglioramento CAGR nominale: +{format_percentage(miglioramento_cagr * 100)}")
     
-    # Analysis of mortgage efficiency
-    st.write("**📊 Analisi Efficienza Mutuo:**")
+    # Analysis of mortgage efficiency (using nominal values)
+    st.write("**📊 Analisi Efficienza Mutuo (Valori Nominali):**")
     if results['totale_costi_mutuo'] > 0:
-        # Calculate if mortgage is worth it (leverage effect)
+        # Calculate if mortgage is worth it (leverage effect) using nominal values
         capitale_proprio_necessario = params['valore_immobile']  # Assuming no mortgage means paying full price
-        roi_con_mutuo = (results['rendimento_totale_nominale'] / capitale_proprio_necessario) * 100
-        roi_senza_mutuo = (rendimento_senza_mutuo / capitale_proprio_necessario) * 100
+        roi_nominale_con_mutuo = (results['rendimento_totale_nominale'] / capitale_proprio_necessario) * 100
+        
+        # Calculate ROI without mortgage using nominal values
+        rendimento_nominale_senza_mutuo = results['rendimento_totale_nominale'] + results['totale_costi_mutuo']
+        roi_nominale_senza_mutuo = (rendimento_nominale_senza_mutuo / capitale_proprio_necessario) * 100
         
         leverage_col1, leverage_col2 = st.columns(2)
         
         with leverage_col1:
-            st.write("**🎯 Valutazione Leva Finanziaria:**")
-            if roi_con_mutuo > roi_senza_mutuo:
-                st.error("❌ Il mutuo riduce il rendimento")
+            st.write("**🎯 Valutazione Leva Finanziaria (Nominale):**")
+            if roi_nominale_con_mutuo < roi_nominale_senza_mutuo:
+                st.error("❌ Il mutuo riduce il rendimento nominale")
                 st.info("💡 Considera di valutare se il mutuo è necessario")
             else:
-                st.success("✅ Il mutuo non peggiora significativamente il rendimento")
+                st.success("✅ Il mutuo non peggiora significativamente il rendimento nominale")
             
-            st.write(f"• ROI con mutuo: {format_percentage(roi_con_mutuo)}")
-            st.write(f"• ROI senza mutuo: {format_percentage(roi_senza_mutuo)}")
+            st.write(f"• ROI nominale con mutuo: {format_percentage(roi_nominale_con_mutuo)}")
+            st.write(f"• ROI nominale senza mutuo: {format_percentage(roi_nominale_senza_mutuo)}")
         
         with leverage_col2:
             # Calculate break-even mortgage rate
