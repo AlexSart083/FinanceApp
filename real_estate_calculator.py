@@ -4,7 +4,48 @@ from ui_components import format_currency, format_percentage
 def render_real_estate_section():
     """Render real estate investment calculator section"""
     with st.expander("🏘️ Calcolo Investimento Immobiliare", expanded=False):
-        st.subheader("Analisi Investimento Immobiliare")
+        # Total investment and returns summary
+        investimento_totale = params['valore_immobile'] + results['totale_costi_mutuo']
+        st.write(f"• **Investimento Totale: {format_currency(investimento_totale)}**")
+        st.write(f"• **Capitale Finale + Affitti: {format_currency(results['valore_finale_nominale'] + results['totale_affitti_netti'])}**")
+    
+    with summary_col2:
+        # Final recommendation based on key metrics
+        st.write("**💡 Valutazione Complessiva:**")
+        
+        # Count positive indicators
+        positive_indicators = 0
+        if results['cagr_reale'] > 0.03:  # 3%
+            positive_indicators += 1
+        if results['rendimento_medio_annuo'] > 4:  # 4%
+            positive_indicators += 1
+        if cost_percentage < 50:  # Costs < 50%
+            positive_indicators += 1
+        if params['rivalutazione_annua'] > params['inflazione_perc']:
+            positive_indicators += 1
+        if break_even_years < 20:
+            positive_indicators += 1
+        
+        # Final assessment
+        if positive_indicators >= 4:
+            st.success("🚀 **Investimento Attraente**")
+            st.write("• Buoni rendimenti e struttura costi efficiente")
+        elif positive_indicators >= 3:
+            st.info("📈 **Investimento Accettabile**")
+            st.write("• Rendimenti moderati, valuta pro e contro")
+        elif positive_indicators >= 2:
+            st.warning("⚠️ **Investimento Rischioso**")
+            st.write("• Rendimenti limitati, considera alternative")
+        else:
+            st.error("📉 **Investimento Non Raccomandato**")
+            st.write("• Rendimenti insufficienti per i rischi")
+    
+    # Disclaimer semplificato
+    st.info("""
+    **📝 Nota:** Questo calcolo è basato su assunzioni semplificate. I mercati immobiliari reali sono influenzati da 
+    numerosi fattori non considerati (domanda/offerta locale, normative, condizioni economiche, ecc.). 
+    Consulta sempre un consulente finanziario prima di investire.
+    """)subheader("Analisi Investimento Immobiliare")
         st.info("💡 Calcolo completo con rivalutazione, inflazione, mutuo e adeguamento affitti personalizzabile")
         col1, col2, col3 = st.columns(3)
         
@@ -206,7 +247,7 @@ def render_real_estate_section():
                     'tipo_adeguamento': tipo_adeguamento
                 }
                 results = calculate_real_estate_investment_improved(params)
-                display_real_estate_results_improved(results, params)
+                display_real_estate_results_simplified(results, params)
             except Exception as e:
                 st.error(f"❌ Errore nel calcolo immobiliare: {str(e)}")
                 st.error("Verifica che tutti i valori siano corretti.")
@@ -242,7 +283,6 @@ def calculate_real_estate_investment_improved(params):
     affitti_lordi_annuali = []
     affitti_netti_annuali = []
     rendimenti_annuali = []
-    adeguamenti_effettuati = []
     costi_gestione_annuali = []
     costi_mutuo_annuali = []
     
@@ -262,13 +302,11 @@ def calculate_real_estate_investment_improved(params):
             if params['tipo_adeguamento'] == "Valore Immobile":
                 # Adjust rent to maintain same percentage of property value
                 affitto_corrente = valore_corrente * rapporto_affitto_iniziale
-                adeguamenti_effettuati.append(f"Anno {anno}: Adeguato a valore immobile")
                 
             elif params['tipo_adeguamento'] == "Inflazione":
                 # Adjust rent by cumulative inflation for the adjustment period
                 inflazione_cumulativa = (1 + inflazione_decimal) ** params['adeguamento_affitto_anni']
                 affitto_corrente = affitto_corrente * inflazione_cumulativa
-                adeguamenti_effettuati.append(f"Anno {anno}: Adeguato all'inflazione ({format_percentage((inflazione_cumulativa - 1) * 100)})")
                 
             # If "Nessun Adeguamento", rent stays the same
         
@@ -344,7 +382,6 @@ def calculate_real_estate_investment_improved(params):
         'affitti_lordi_annuali': affitti_lordi_annuali,
         'affitti_netti_annuali': affitti_netti_annuali,
         'rendimenti_annuali': rendimenti_annuali,
-        'adeguamenti_effettuati': adeguamenti_effettuati,
         'costi_gestione_annuali': costi_gestione_annuali,
         'costi_mutuo_annuali': costi_mutuo_annuali,
         'valore_finale_nominale': valore_finale_nominale,
@@ -365,11 +402,11 @@ def calculate_real_estate_investment_improved(params):
         'crescita_costi_gestione': crescita_costi_gestione
     }
 
-def display_real_estate_results_improved(results, params):
-    """Display real estate investment calculation results with rent adjustment analysis and mortgage costs"""
+def display_real_estate_results_simplified(results, params):
+    """Display real estate investment calculation results - SIMPLIFIED VERSION"""
     st.success("**🎯 Risultati Analisi Investimento Immobiliare**")
     
-    # Create detailed results layout
+    # Create main results layout - 3 columns for key metrics
     res_col1, res_col2, res_col3 = st.columns(3)
     
     with res_col1:
@@ -378,7 +415,6 @@ def display_real_estate_results_improved(results, params):
         st.write(f"• **Valore Finale (Nominale): {format_currency(results['valore_finale_nominale'])}**")
         st.write(f"• **Valore Finale (Reale): {format_currency(results['valore_finale_reale'])}**")
         st.write(f"• Plusvalenza (Nominale): {format_currency(results['guadagno_capitale_nominale'])}")
-        st.write(f"• Plusvalenza (Reale): {format_currency(results['guadagno_capitale_reale'])}")
         rivalutazione_totale = ((results['valore_finale_nominale']/params['valore_immobile'] - 1) * 100) if params['valore_immobile'] > 0 else 0
         st.write(f"• Rivalutazione Totale: {format_percentage(rivalutazione_totale)}")
     
@@ -387,23 +423,9 @@ def display_real_estate_results_improved(results, params):
         st.write(f"• Affitto Iniziale: {format_currency(params['affitto_lordo'])}")
         st.write(f"• **Affitto Finale: {format_currency(results['affitto_finale'])}**")
         st.write(f"• **Crescita Affitto Totale: {format_percentage(results['crescita_affitto_totale'])}**")
-        st.write(f"• **Crescita Affitto Annua: {format_percentage(results['crescita_affitto_annua'])}**")
         st.write(f"• **Totale Affitti Netti {params['anni_investimento']} anni: {format_currency(results['totale_affitti_netti'])}**")
         st.write(f"• **Rendimento Medio Annuo: {format_percentage(results['rendimento_medio_annuo'])}**")
         st.write(f"• Modalità Adeguamento: **{params['tipo_adeguamento']}**")
-        
-        # Analisi efficacia dell'adeguamento scelto
-        if params['tipo_adeguamento'] == "Inflazione":
-            inflazione_cumulativa = ((1 + params['inflazione_perc']/100) ** params['anni_investimento'] - 1) * 100
-            st.info(f"📊 Inflazione cumulativa: {format_percentage(inflazione_cumulativa)}")
-            if results['crescita_affitto_totale'] >= inflazione_cumulativa * 0.95:  # Tolleranza del 5%
-                st.success("✅ Affitto ha mantenuto il potere d'acquisto")
-            else:
-                st.warning("⚠️ Affitto ha perso potere d'acquisto")
-        elif params['tipo_adeguamento'] == "Valore Immobile":
-            rapporto_finale = (results['affitto_finale'] / results['valore_finale_nominale']) * 100
-            rapporto_iniziale = (params['affitto_lordo'] / params['valore_immobile']) * 100
-            st.success(f"✅ Rapporto affitto/valore mantenuto: {format_percentage(rapporto_finale)}")
     
     with res_col3:
         st.write("**📈 Rendimento Totale:**")
@@ -413,435 +435,122 @@ def display_real_estate_results_improved(results, params):
         # Mostra costi mutuo se presente
         if results['totale_costi_mutuo'] > 0:
             st.write(f"• **Totale Costi Mutuo: {format_currency(results['totale_costi_mutuo'])}**")
-            rendimento_senza_mutuo = results['rendimento_totale_nominale'] + results['totale_costi_mutuo']
-            st.write(f"• Rendimento se senza mutuo: {format_currency(rendimento_senza_mutuo)}")
         
         rendimento_perc_nominale = (results['rendimento_totale_nominale'] / params['valore_immobile']) * 100 if params['valore_immobile'] > 0 else 0
         rendimento_perc_reale = (results['rendimento_totale_reale'] / params['valore_immobile']) * 100 if params['valore_immobile'] > 0 else 0
         
         st.write(f"• Rendimento % (Nominale): {format_percentage(rendimento_perc_nominale)}")
-        st.write(f"• Rendimento % (Reale): {format_percentage(rendimento_perc_reale)}")
         st.write(f"• **CAGR (Nominale): {format_percentage(results['cagr_nominale'] * 100)}**")
         st.write(f"• **CAGR (Reale): {format_percentage(results['cagr_reale'] * 100)}**")
     
-    # Detailed rent adjustment analysis
-    display_rent_adjustment_analysis(results, params)
-    
-    # Detailed cost breakdown for the last year
-    display_cost_breakdown_improved(results, params)
-    
-    # Additional analysis
-    display_additional_analysis_improved(results, params)
-
-def display_rent_adjustment_analysis(results, params):
-    """Display detailed analysis of rent adjustments"""
-    if params['tipo_adeguamento'] != "Nessun Adeguamento":
-        st.write("**🔄 Analisi Adeguamenti Affitto:**")
-        
-        adjustment_col1, adjustment_col2 = st.columns(2)
-        
-        with adjustment_col1:
-            st.write("**📊 Statistiche Adeguamenti:**")
-            numero_adeguamenti = len(results['adeguamenti_effettuati'])
-            st.write(f"• **Numero Adeguamenti Effettuati: {numero_adeguamenti}**")
-            st.write(f"• **Frequenza: ogni {params['adeguamento_affitto_anni']} anni**")
-            
-            if numero_adeguamenti > 0:
-                adeguamento_medio = (results['crescita_affitto_totale'] / numero_adeguamenti) if numero_adeguamenti > 0 else 0
-                st.write(f"• **Adeguamento Medio per Volta: {format_percentage(adeguamento_medio)}**")
-            
-            # Confronto con benchmark
-            if params['tipo_adeguamento'] == "Inflazione":
-                inflazione_teoria = params['inflazione_perc'] * params['anni_investimento']
-                differenza = results['crescita_affitto_totale'] - inflazione_teoria
-                if abs(differenza) < 1:  # Tolleranza 1%
-                    st.success("✅ Adeguamento perfettamente allineato all'inflazione")
-                elif differenza > 0:
-                    st.info(f"📈 Adeguamento superiore all'inflazione di {format_percentage(differenza)}")
-                else:
-                    st.warning(f"📉 Adeguamento inferiore all'inflazione di {format_percentage(abs(differenza))}")
-        
-        with adjustment_col2:
-            if results['adeguamenti_effettuati']:
-                st.write("**📅 Cronologia Adeguamenti:**")
-                for adeguamento in results['adeguamenti_effettuati']:
-                    st.write(f"• {adeguamento}")
-            
-            # Analisi impatto economico degli adeguamenti
-            if numero_adeguamenti > 0:
-                st.write("**💰 Impatto Economico:**")
-                affitto_senza_adeguamenti = params['affitto_lordo'] * params['anni_investimento']
-                affitto_con_adeguamenti = sum(results['affitti_lordi_annuali'])
-                guadagno_da_adeguamenti = affitto_con_adeguamenti - affitto_senza_adeguamenti
-                
-                st.write(f"• Affitto senza adeguamenti: {format_currency(affitto_senza_adeguamenti)}")
-                st.write(f"• Affitto con adeguamenti: {format_currency(affitto_con_adeguamenti)}")
-                if guadagno_da_adeguamenti > 0:
-                    st.success(f"• **Guadagno da adeguamenti: {format_currency(guadagno_da_adeguamenti)}**")
-                else:
-                    st.error(f"• **Perdita da adeguamenti: {format_currency(guadagno_da_adeguamenti)}**")
-    else:
-        st.warning("⚠️ **Nessun Adeguamento Applicato** - L'affitto rimane fisso per tutto il periodo")
-        
-        # Calcola la perdita di potere d'acquisto
-        inflazione_cumulativa = ((1 + params['inflazione_perc']/100) ** params['anni_investimento'] - 1) * 100
-        perdita_potere_acquisto = params['affitto_lordo'] * (inflazione_cumulativa / 100)
-        
-        st.error(f"📉 **Perdita di potere d'acquisto annuo finale:** {format_currency(perdita_potere_acquisto)}")
-        st.error(f"📉 **Inflazione cumulativa nel periodo:** {format_percentage(inflazione_cumulativa)}")
-
-def display_cost_breakdown_improved(results, params):
-    """Display detailed cost breakdown for the last year with rent adjustment info and mortgage costs"""
-    st.write("**💸 Dettaglio Costi Ultimo Anno:**")
+    # Simplified cost breakdown - ultimo anno only
+    st.write("**💸 Sintesi Costi e Performance:**")
     cost_col1, cost_col2 = st.columns(2)
     
-    # Calculate final year costs
+    # Calculate final year key metrics
     valore_finale = results['valori_annuali'][-1]
     affitto_finale = results['affitto_finale']
-    costi_gestione_finali = results['costi_gestione_finali']
-    costo_mutuo_finale = results['costi_mutuo_annuali'][-1]
-    
-    # Convert percentages to decimals
     periodo_sfitto_decimal = params['periodo_sfitto_perc'] / 100
-    tassazione_decimal = params['tassazione_affitti_perc'] / 100
-    manutenzione_decimal = params['manutenzione_straordinaria_perc'] / 100
-    costi_assicurazione_decimal = params['costi_assicurazione_perc'] / 100
-    tassa_catastale_decimal = params['tassa_catastale_perc'] / 100
-    
-    ultima_manutenzione = valore_finale * manutenzione_decimal
-    ultimo_affitto_effettivo = affitto_finale * (1 - periodo_sfitto_decimal)
-    ultime_tasse_affitto = ultimo_affitto_effettivo * tassazione_decimal
-    
-    # Calculate final costs based on final property value
-    costi_assicurazione_finali = valore_finale * costi_assicurazione_decimal
-    tassa_catastale_finale = valore_finale * tassa_catastale_decimal
-    
-    ultimi_costi_totali = (costi_assicurazione_finali + costi_gestione_finali + 
-                         ultima_manutenzione + tassa_catastale_finale + 
-                         ultime_tasse_affitto + costo_mutuo_finale)
+    affitto_effettivo_finale = affitto_finale * (1 - periodo_sfitto_decimal)
+    affitto_netto_finale = results['affitti_netti_annuali'][-1]
     
     with cost_col1:
-        st.write(f"• Assicurazione ({format_percentage(params['costi_assicurazione_perc'])}): {format_currency(costi_assicurazione_finali)}")
-        st.write(f"• **Costi Gestione (adeguati inflazione): {format_currency(costi_gestione_finali)}**")
-        st.write(f"  - Costi iniziali: {format_currency(params['costi_gestione_euro'])}")
-        st.write(f"  - Crescita totale: {format_percentage(results['crescita_costi_gestione'])}")
-        st.write(f"• Manutenzione Straordinaria ({format_percentage(params['manutenzione_straordinaria_perc'])}): {format_currency(ultima_manutenzione)}")
-        st.write(f"• **Tassa Catastale/IMU ({format_percentage(params['tassa_catastale_perc'])}): {format_currency(tassa_catastale_finale)}** ⚠️")
-        st.write(f"• **Tasse su Affitti ({format_percentage(params['tassazione_affitti_perc'])}): {format_currency(ultime_tasse_affitto)}**")
-        if costo_mutuo_finale > 0:
-            st.write(f"• **Rata Mutuo Annua: {format_currency(costo_mutuo_finale)}**")
-            if params['anni_investimento'] > params['anni_restanti_mutuo']:
-                st.info(f"⏰ Mutuo terminato dopo {params['anni_restanti_mutuo']} anni")
-    
-    with cost_col2:
-        st.write(f"• **Totale Costi Annui: {format_currency(ultimi_costi_totali)}**")
+        st.write("**📊 Ultimo Anno - Metriche Chiave:**")
         st.write(f"• Affitto Lordo: {format_currency(affitto_finale)}")
-        perdita_sfitto = affitto_finale * periodo_sfitto_decimal
-        st.write(f"• Meno Periodo Sfitto: {format_currency(perdita_sfitto)}")
-        st.write(f"• Affitto Effettivo: {format_currency(ultimo_affitto_effettivo)}")
-        affitto_netto_finale = results['affitti_netti_annuali'][-1]
-        st.write(f"• **Affitto Netto Finale: {format_currency(affitto_netto_finale)}**")
+        st.write(f"• Affitto Effettivo: {format_currency(affitto_effettivo_finale)}")
+        st.write(f"• **Affitto Netto: {format_currency(affitto_netto_finale)}**")
         
-        # Calculate net yield after all costs and taxes
+        # Calculate key percentages
         rendimento_lordo_finale = (affitto_finale / valore_finale) * 100 if valore_finale > 0 else 0
         rendimento_netto_finale = (affitto_netto_finale / params['valore_immobile']) * 100 if params['valore_immobile'] > 0 else 0
         st.write(f"• Rendimento Lordo: {format_percentage(rendimento_lordo_finale)}")
         st.write(f"• **Rendimento Netto: {format_percentage(rendimento_netto_finale)}**")
         
-        # Show percentage breakdown of costs
-        total_cost_perc = (ultimi_costi_totali / ultimo_affitto_effettivo) * 100 if ultimo_affitto_effettivo > 0 else 0
-        st.write(f"• **% Costi su Affitto Effettivo: {format_percentage(total_cost_perc)}**")
+        # Percentage of costs on effective rent
+        total_costs_final_year = affitto_effettivo_finale - affitto_netto_finale
+        cost_percentage = (total_costs_final_year / affitto_effettivo_finale) * 100 if affitto_effettivo_finale > 0 else 0
+        st.write(f"• **% Costi Totali su Affitto: {format_percentage(cost_percentage)}**")
+    
+    with cost_col2:
+        st.write("**⚠️ Valutazioni e Raccomandazioni:**")
         
-        # Mortgage impact analysis
-        if costo_mutuo_finale > 0:
-            impatto_mutuo = (costo_mutuo_finale / ultimo_affitto_effettivo) * 100 if ultimo_affitto_effettivo > 0 else 0
-            st.write(f"• **% Mutuo su Affitto Effettivo: {format_percentage(impatto_mutuo)}**")
-
-def display_additional_analysis_improved(results, params):
-    """Display additional analysis and considerations with rent adjustment insights and mortgage analysis"""
-    st.write("**📊 Analisi Aggiuntiva:**")
+        # Performance evaluation
+        if results['rendimento_medio_annuo'] > 7:
+            st.success("✅ Rendimento netto interessante (> 7%)")
+        elif results['rendimento_medio_annuo'] > 3:
+            st.info("📈 Rendimento netto moderato (3-7%)")
+        else:
+            st.warning("⚠️ Rendimento netto basso (< 3%)")
+        
+        # CAGR evaluation
+        if results['cagr_reale'] > 0.05:
+            st.success("🚀 CAGR reale buono (> 5%)")
+        elif results['cagr_reale'] > 0:
+            st.info("📊 CAGR reale positivo")
+        else:
+            st.error("📉 CAGR reale negativo")
+        
+        # Cost structure evaluation
+        if cost_percentage > 60:
+            st.warning("⚠️ Struttura costi elevata (> 60%)")
+        elif cost_percentage < 40:
+            st.success("✅ Struttura costi efficiente (< 40%)")
+        else:
+            st.info("📊 Struttura costi nella media (40-60%)")
+        
+        # Rent adjustment strategy evaluation
+        if params['tipo_adeguamento'] == "Nessun Adeguamento":
+            st.error("🚨 Strategia rischiosa: perdita potere d'acquisto")
+        elif params['tipo_adeguamento'] == "Inflazione":
+            st.success("✅ Strategia conservativa")
+        else:  # Valore Immobile
+            st.info("📈 Strategia dinamica")
+        
+        # Property appreciation vs inflation
+        if params['rivalutazione_annua'] <= params['inflazione_perc']:
+            st.warning("⚠️ Rivalutazione ≤ Inflazione")
+        else:
+            st.success("✅ Rivalutazione > Inflazione")
     
-    analysis_col1, analysis_col2 = st.columns(2)
+    # Mortgage analysis (if present) - simplified
+    if results['totale_costi_mutuo'] > 0:
+        st.write("**🏦 Analisi Mutuo:**")
+        mortgage_col1, mortgage_col2 = st.columns(2)
+        
+        with mortgage_col1:
+            st.write(f"• **Totale Costi Mutuo {params['anni_investimento']} anni: {format_currency(results['totale_costi_mutuo'])}**")
+            rata_annua = params['rata_mutuo_mensile'] * 12
+            percentuale_rata = (rata_annua / params['affitto_lordo']) * 100 if params['affitto_lordo'] > 0 else 0
+            st.write(f"• Rata annua vs Affitto iniziale: {format_percentage(percentuale_rata)}")
+            
+            if params['anni_restanti_mutuo'] < params['anni_investimento']:
+                anni_liberi = params['anni_investimento'] - params['anni_restanti_mutuo']
+                st.success(f"✅ Ultimi {anni_liberi} anni senza rata")
+        
+        with mortgage_col2:
+            # Mortgage sustainability
+            if percentuale_rata < 50:
+                st.success("✅ Mutuo sostenibile (< 50% affitto)")
+            elif percentuale_rata < 70:
+                st.warning("⚠️ Mutuo impegnativo (50-70% affitto)")
+            else:
+                st.error("🚨 Mutuo rischioso (> 70% affitto)")
+            
+            # Compare with and without mortgage
+            rendimento_senza_mutuo = results['rendimento_totale_nominale'] + results['totale_costi_mutuo']
+            miglioramento = rendimento_senza_mutuo - results['rendimento_totale_nominale']
+            st.info(f"📊 Rendimento senza mutuo: +{format_currency(miglioramento)}")
     
-    with analysis_col1:
+    # Final summary
+    st.write("**📋 Riepilogo Investimento:**")
+    summary_col1, summary_col2 = st.columns(2)
+    
+    with summary_col1:
         # Break-even analysis
         avg_net_rent = results['totale_affitti_netti'] / params['anni_investimento'] if params['anni_investimento'] > 0 else 0
         break_even_years = params['valore_immobile'] / avg_net_rent if avg_net_rent > 0 else float('inf')
+        
         if break_even_years != float('inf') and break_even_years > 0:
-            st.write("**⏱️ Analisi Temporale:**")
-            st.write(f"• Payback Period: {break_even_years:.1f} anni")
+            st.write(f"• **Payback Period: {break_even_years:.1f} anni**")
         
-        # Cost efficiency warning (excluding mortgage)
-        total_costs_perc_no_mortgage = (params['costi_assicurazione_perc'] + 
-                                       params['manutenzione_straordinaria_perc'] + 
-                                       params['tassa_catastale_perc'])
-        # Add management costs as percentage of initial property value
-        management_cost_perc = (params['costi_gestione_euro'] / params['valore_immobile']) * 100
-        total_costs_perc_no_mortgage += management_cost_perc
-        
-        st.write("**💸 Analisi Costi:**")
-        if total_costs_perc_no_mortgage > 4:
-            st.warning("⚠️ Costi totali elevati (> 4% valore immobile)")
-        elif total_costs_perc_no_mortgage < 2:
-            st.success("✅ Struttura costi efficiente (< 2%)")
-        else:
-            st.info("ℹ️ Struttura costi nella media (2-4%)")
-    
-    with analysis_col2:
-        st.write("**⚠️ Considerazioni e Raccomandazioni:**")
-        
-        # Yield warnings and recommendations
-        if results['rendimento_medio_annuo'] < 3:
-            st.warning("⚠️ Rendimento netto basso (< 3%)")
-        elif results['rendimento_medio_annuo'] > 7:
-            st.success("✅ Rendimento netto interessante (> 7%)")
-        else:
-            st.info("ℹ️ Rendimento netto moderato (3-7%)")
-        
-        # Management costs analysis
-        st.write("**💼 Analisi Costi Gestione:**")
-        st.write(f"• Costi iniziali: {format_currency(params['costi_gestione_euro'])}")
-        st.write(f"• Costi finali: {format_currency(results['costi_gestione_finali'])}")
-        st.write(f"• Crescita totale: {format_percentage(results['crescita_costi_gestione'])}")
-        inflazione_teorica = ((1 + params['inflazione_perc']/100) ** params['anni_investimento'] - 1) * 100
-        if abs(results['crescita_costi_gestione'] - inflazione_teorica) < 1:
-            st.success("✅ Costi cresciuti esattamente con l'inflazione")
-        else:
-            st.info("📊 Adeguamento automatico all'inflazione applicato")
-        
-        # Rent adjustment strategy recommendations
-        st.write("**💡 Analisi Strategia Affitti:**")
-        if params['tipo_adeguamento'] == "Nessun Adeguamento":
-            st.error("🚨 Strategia rischiosa: perdita di potere d'acquisto garantita")
-            st.info("💡 Considera adeguamenti periodici all'inflazione o al valore")
-        elif params['tipo_adeguamento'] == "Inflazione":
-            if params['rivalutazione_annua'] > params['inflazione_perc']:
-                st.info("💡 Considera adeguamento al valore immobile per maggiori ricavi")
-            else:
-                st.success("✅ Strategia conservativa e sostenibile")
-        else:  # Valore Immobile
-            if params['rivalutazione_annua'] > params['inflazione_perc'] + 1:
-                st.success("🚀 Strategia aggressiva: massimizza i ricavi")
-            else:
-                st.info("📊 Strategia bilanciata")
-        
-        # Market condition warnings
-        if params['adeguamento_affitto_anni'] > 5:
-            st.warning("⚠️ Periodo adeguamento lungo: maggiore esposizione all'inflazione")
-        
-        # Property appreciation vs inflation
-        if params['rivalutazione_annua'] < params['inflazione_perc']:
-            st.warning("⚠️ Rivalutazione < Inflazione: perdita valore reale immobile")
-        else:
-            st.success("✅ Rivalutazione > Inflazione: mantenimento valore reale")
-        
-        # Cost efficiency warning (excluding mortgage)
-        total_costs_perc_no_mortgage = (params['costi_assicurazione_perc'] + 
-                                       params['manutenzione_straordinaria_perc'] + 
-                                       params['tassa_catastale_perc'])
-        # Add management costs as percentage of initial property value
-        management_cost_perc = (params['costi_gestione_euro'] / params['valore_immobile']) * 100
-        total_costs_perc_no_mortgage += management_cost_perc
-        
-        if total_costs_perc_no_mortgage > 4:
-            st.warning("⚠️ Costi totali elevati (> 4% valore immobile)")
-        elif total_costs_perc_no_mortgage < 2:
-            st.success("✅ Struttura costi efficiente (< 2%)")
-        else:
-            st.info("ℹ️ Struttura costi nella media (2-4%)")
-        
-        # Mortgage efficiency analysis
-        if results['totale_costi_mutuo'] > 0:
-            st.write("**🏦 Efficienza Mutuo:**")
-            if params['anni_restanti_mutuo'] < params['anni_investimento']:
-                anni_senza_mutuo = params['anni_investimento'] - params['anni_restanti_mutuo']
-                st.success(f"✅ {anni_senza_mutuo} anni finali senza rata mutuo")
-            
-            # Check if mortgage cost is reasonable compared to rent
-            rata_annua = params['rata_mutuo_mensile'] * 12
-            percentuale_rata_su_affitto = (rata_annua / params['affitto_lordo']) * 100 if params['affitto_lordo'] > 0 else 0
-            if percentuale_rata_su_affitto > 80:
-                st.error("🚨 Rata mutuo > 80% dell'affitto: molto rischiosa")
-            elif percentuale_rata_su_affitto > 60:
-                st.warning("⚠️ Rata mutuo > 60% dell'affitto: rischiosa")
-            elif percentuale_rata_su_affitto > 40:
-                st.info("ℹ️ Rata mutuo moderata (40-60% dell'affitto)")
-            else:
-                st.success("✅ Rata mutuo sostenibile (< 40% dell'affitto)")
-        
-        # CAGR analysis with rent adjustment context
-        if results['cagr_reale'] > 0.08:  # 8%
-            st.success("🚀 CAGR reale eccellente (> 8%)")
-        elif results['cagr_reale'] > 0.05:  # 5%
-            st.success("✅ CAGR reale buono (> 5%)")
-        elif results['cagr_reale'] > 0.02:  # 2%
-            st.info("📈 CAGR reale moderato (> 2%)")
-        elif results['cagr_reale'] > 0:
-            st.info("📊 CAGR reale positivo ma basso")
-        else:
-            st.error("📉 CAGR reale negativo - perdita di valore")
-    
-    # Comparative analysis section
-    st.write("**🔍 Confronto Strategie Adeguamento:**")
-    display_rent_strategy_comparison(results, params)
-    
-    # Mortgage vs no mortgage comparison
-    if results['totale_costi_mutuo'] > 0:
-        display_mortgage_comparison(results, params)
-    
-    # Disclaimer finale
-    st.info("""
-    **RICORDA:** I valori calcolati sono basati su assunzioni semplificate. I mercati immobiliari reali sono influenzati da numerosi fattori non considerati in questo modello (domanda/offerta locale, normative, condizioni economiche generali, variazioni tassi mutuo, ecc.).
-    """)
-
-def display_rent_strategy_comparison(results, params):
-    """Display comparison between different rent adjustment strategies"""
-    comparison_col1, comparison_col2, comparison_col3 = st.columns(3)
-    
-    # Calculate what would happen with different strategies
-    current_strategy = params['tipo_adeguamento']
-    
-    with comparison_col1:
-        st.write("**🔒 Strategia Attuale:**")
-        st.write(f"• **{current_strategy}**")
-        st.write(f"• Affitto finale: {format_currency(results['affitto_finale'])}")
-        st.write(f"• Crescita totale: {format_percentage(results['crescita_affitto_totale'])}")
-        st.write(f"• CAGR reale: {format_percentage(results['cagr_reale'] * 100)}")
-    
-    with comparison_col2:
-        # Quick calculation for inflation strategy
-        if current_strategy != "Inflazione":
-            st.write("**📈 Se Adeguamento all'Inflazione:**")
-            inflazione_factor = (1 + params['inflazione_perc']/100) ** params['anni_investimento']
-            affitto_inflazione = params['affitto_lordo'] * inflazione_factor
-            crescita_inflazione = (inflazione_factor - 1) * 100
-            
-            st.write(f"• Affitto finale: {format_currency(affitto_inflazione)}")
-            st.write(f"• Crescita totale: {format_percentage(crescita_inflazione)}")
-            
-            if affitto_inflazione > results['affitto_finale']:
-                st.success("✅ Affitto più alto")
-            elif affitto_inflazione < results['affitto_finale']:
-                st.error("❌ Affitto più basso")
-            else:
-                st.info("⚖️ Affitto simile")
-    
-    with comparison_col3:
-        # Quick calculation for property value strategy
-        if current_strategy != "Valore Immobile":
-            st.write("**🏠 Se Adeguamento al Valore:**")
-            rapporto_iniziale = params['affitto_lordo'] / params['valore_immobile']
-            affitto_valore = results['valore_finale_nominale'] * rapporto_iniziale
-            crescita_valore = ((affitto_valore / params['affitto_lordo']) - 1) * 100
-            
-            st.write(f"• Affitto finale: {format_currency(affitto_valore)}")
-            st.write(f"• Crescita totale: {format_percentage(crescita_valore)}")
-            
-            if affitto_valore > results['affitto_finale']:
-                st.success("✅ Affitto più alto")
-            elif affitto_valore < results['affitto_finale']:
-                st.error("❌ Affitto più basso")
-            else:
-                st.info("⚖️ Affitto simile")
-    
-    # Summary recommendation
-    st.write("**💡 Raccomandazione Strategica:**")
-    if params['rivalutazione_annua'] > params['inflazione_perc'] + 1:
-        if current_strategy != "Valore Immobile":
-            st.info("💡 **Considera l'adeguamento al valore immobile** per massimizzare i ricavi nel lungo termine")
-        else:
-            st.success("✅ Strategia ottimale per questo scenario di mercato")
-    elif params['inflazione_perc'] > params['rivalutazione_annua']:
-        if current_strategy != "Inflazione":
-            st.info("💡 **L'adeguamento all'inflazione** potrebbe essere più stabile e prevedibile")
-        else:
-            st.success("✅ Strategia prudente per questo scenario economico")
-    else:
-        st.info("📊 Entrambe le strategie di adeguamento sono valide per questo scenario")
-
-def display_mortgage_comparison(results, params):
-    """Display comparison between having mortgage vs not having mortgage"""
-    st.write("**🏦 Confronto Con/Senza Mutuo:**")
-    
-    mortgage_col1, mortgage_col2 = st.columns(2)
-    
-    with mortgage_col1:
-        st.write("**💸 Scenario Attuale (Con Mutuo):**")
-        st.write(f"• Totale costi mutuo: {format_currency(results['totale_costi_mutuo'])}")
-        st.write(f"• Rendimento totale: {format_currency(results['rendimento_totale_nominale'])}")
-        st.write(f"• CAGR nominale: {format_percentage(results['cagr_nominale'] * 100)}")
-        
-        # Calculate cash flow impact
-        rata_annua = params['rata_mutuo_mensile'] * 12
-        if rata_annua > 0:
-            anni_pagamento = min(params['anni_restanti_mutuo'], params['anni_investimento'])
-            flusso_netto_medio = results['totale_affitti_netti'] / params['anni_investimento']
-            flusso_con_mutuo = flusso_netto_medio
-            st.write(f"• Flusso netto medio annuo: {format_currency(flusso_con_mutuo)}")
-    
-    with mortgage_col2:
-        st.write("**💰 Scenario Alternativo (Senza Mutuo):**")
-        rendimento_nominale_senza_mutuo = results['rendimento_totale_nominale'] + results['totale_costi_mutuo']
-        affitti_netti_senza_mutuo = results['totale_affitti_netti'] + results['totale_costi_mutuo']
-        
-        # Recalculate nominal CAGR without mortgage
-        cagr_nominale_senza_mutuo = ((results['valore_finale_nominale'] + affitti_netti_senza_mutuo) / params['valore_immobile']) ** (1/params['anni_investimento']) - 1 if params['valore_immobile'] > 0 else 0
-        
-        st.write(f"• Nessun costo mutuo: {format_currency(0)}")
-        st.write(f"• Rendimento nominale totale: {format_currency(rendimento_nominale_senza_mutuo)}")
-        st.write(f"• CAGR nominale: {format_percentage(cagr_nominale_senza_mutuo * 100)}")
-        
-        flusso_senza_mutuo = affitti_netti_senza_mutuo / params['anni_investimento']
-        st.write(f"• Flusso netto medio annuo: {format_currency(flusso_senza_mutuo)}")
-        
-        # Show improvement in nominal terms
-        miglioramento_rendimento = rendimento_nominale_senza_mutuo - results['rendimento_totale_nominale']
-        miglioramento_cagr = cagr_nominale_senza_mutuo - results['cagr_nominale']
-        
-        if miglioramento_rendimento > 0:
-            st.success(f"✅ Miglioramento rendimento nominale: +{format_currency(miglioramento_rendimento)}")
-            st.success(f"✅ Miglioramento CAGR nominale: +{format_percentage(miglioramento_cagr * 100)}")
-    
-    # Analysis of mortgage efficiency (using nominal values)
-    st.write("**📊 Analisi Efficienza Mutuo (Valori Nominali):**")
-    if results['totale_costi_mutuo'] > 0:
-        # Calculate if mortgage is worth it (leverage effect) using nominal values
-        capitale_proprio_necessario = params['valore_immobile']  # Assuming no mortgage means paying full price
-        roi_nominale_con_mutuo = (results['rendimento_totale_nominale'] / capitale_proprio_necessario) * 100
-        
-        # Calculate ROI without mortgage using nominal values
-        rendimento_nominale_senza_mutuo = results['rendimento_totale_nominale'] + results['totale_costi_mutuo']
-        roi_nominale_senza_mutuo = (rendimento_nominale_senza_mutuo / capitale_proprio_necessario) * 100
-        
-        leverage_col1, leverage_col2 = st.columns(2)
-        
-        with leverage_col1:
-            st.write("**🎯 Valutazione Leva Finanziaria (Nominale):**")
-            if roi_nominale_con_mutuo < roi_nominale_senza_mutuo:
-                st.error("❌ Il mutuo riduce il rendimento nominale")
-                st.info("💡 Considera di valutare se il mutuo è necessario")
-            else:
-                st.success("✅ Il mutuo non peggiora significativamente il rendimento nominale")
-            
-            st.write(f"• ROI nominale con mutuo: {format_percentage(roi_nominale_con_mutuo)}")
-            st.write(f"• ROI nominale senza mutuo: {format_percentage(roi_nominale_senza_mutuo)}")
-        
-        with leverage_col2:
-            # Calculate break-even mortgage rate
-            costo_mutuo_annuo_medio = results['totale_costi_mutuo'] / params['anni_restanti_mutuo'] if params['anni_restanti_mutuo'] > 0 else 0
-            
-            st.write("**💡 Considerazioni sul Mutuo:**")
-            if params['anni_restanti_mutuo'] < params['anni_investimento']:
-                anni_liberi = params['anni_investimento'] - params['anni_restanti_mutuo']
-                st.info(f"✅ Ultimi {anni_liberi} anni senza rata")
-            
-            # Mortgage sustainability check
-            rata_annua = params['rata_mutuo_mensile'] * 12
-            if rata_annua > 0:
-                sostenibilita = (rata_annua / params['affitto_lordo']) * 100
-                if sostenibilita < 50:
-                    st.success(f"✅ Mutuo sostenibile ({format_percentage(sostenibilita)} dell'affitto)")
-                elif sostenibilita < 70:
-                    st.warning(f"⚠️ Mutuo impegnativo ({format_percentage(sostenibilita)} dell'affitto)")
-                else:
-                    st.error(f"🚨 Mutuo rischioso ({format_percentage(sostenibilita)} dell'affitto)")
+        st.
