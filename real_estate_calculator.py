@@ -4,48 +4,7 @@ from ui_components import format_currency, format_percentage
 def render_real_estate_section():
     """Render real estate investment calculator section"""
     with st.expander("🏘️ Calcolo Investimento Immobiliare", expanded=False):
-        # Total investment and returns summary
-        investimento_totale = params['valore_immobile'] + results['totale_costi_mutuo']
-        st.write(f"• **Investimento Totale: {format_currency(investimento_totale)}**")
-        st.write(f"• **Capitale Finale + Affitti: {format_currency(results['valore_finale_nominale'] + results['totale_affitti_netti'])}**")
-    
-    with summary_col2:
-        # Final recommendation based on key metrics
-        st.write("**💡 Valutazione Complessiva:**")
-        
-        # Count positive indicators
-        positive_indicators = 0
-        if results['cagr_reale'] > 0.03:  # 3%
-            positive_indicators += 1
-        if results['rendimento_medio_annuo'] > 4:  # 4%
-            positive_indicators += 1
-        if cost_percentage < 50:  # Costs < 50%
-            positive_indicators += 1
-        if params['rivalutazione_annua'] > params['inflazione_perc']:
-            positive_indicators += 1
-        if break_even_years < 20:
-            positive_indicators += 1
-        
-        # Final assessment
-        if positive_indicators >= 4:
-            st.success("🚀 **Investimento Attraente**")
-            st.write("• Buoni rendimenti e struttura costi efficiente")
-        elif positive_indicators >= 3:
-            st.info("📈 **Investimento Accettabile**")
-            st.write("• Rendimenti moderati, valuta pro e contro")
-        elif positive_indicators >= 2:
-            st.warning("⚠️ **Investimento Rischioso**")
-            st.write("• Rendimenti limitati, considera alternative")
-        else:
-            st.error("📉 **Investimento Non Raccomandato**")
-            st.write("• Rendimenti insufficienti per i rischi")
-    
-    # Disclaimer semplificato
-    st.info("""
-    **📝 Nota:** Questo calcolo è basato su assunzioni semplificate. I mercati immobiliari reali sono influenzati da 
-    numerosi fattori non considerati (domanda/offerta locale, normative, condizioni economiche, ecc.). 
-    Consulta sempre un consulente finanziario prima di investire.
-    """)subheader("Analisi Investimento Immobiliare")
+        st.subheader("Analisi Investimento Immobiliare")
         st.info("💡 Calcolo completo con rivalutazione, inflazione, mutuo e adeguamento affitti personalizzabile")
         col1, col2, col3 = st.columns(3)
         
@@ -553,4 +512,45 @@ def display_real_estate_results_simplified(results, params):
         if break_even_years != float('inf') and break_even_years > 0:
             st.write(f"• **Payback Period: {break_even_years:.1f} anni**")
         
-        st.
+        # Total investment and returns summary
+        investimento_totale = params['valore_immobile'] + results['totale_costi_mutuo']
+        st.write(f"• **Investimento Totale: {format_currency(investimento_totale)}**")
+        st.write(f"• **Capitale Finale + Affitti: {format_currency(results['valore_finale_nominale'] + results['totale_affitti_netti'])}**")
+    
+    with summary_col2:
+        # Final recommendation based on key metrics
+        st.write("**💡 Valutazione Complessiva:**")
+        
+        # Count positive indicators
+        positive_indicators = 0
+        if results['cagr_reale'] > 0.03:  # 3%
+            positive_indicators += 1
+        if results['rendimento_medio_annuo'] > 4:  # 4%
+            positive_indicators += 1
+        if cost_percentage < 50:  # Costs < 50%
+            positive_indicators += 1
+        if params['rivalutazione_annua'] > params['inflazione_perc']:
+            positive_indicators += 1
+        if break_even_years != float('inf') and break_even_years < 20:
+            positive_indicators += 1
+        
+        # Final assessment
+        if positive_indicators >= 4:
+            st.success("🚀 **Investimento Attraente**")
+            st.write("• Buoni rendimenti e struttura costi efficiente")
+        elif positive_indicators >= 3:
+            st.info("📈 **Investimento Accettabile**")
+            st.write("• Rendimenti moderati, valuta pro e contro")
+        elif positive_indicators >= 2:
+            st.warning("⚠️ **Investimento Rischioso**")
+            st.write("• Rendimenti limitati, considera alternative")
+        else:
+            st.error("📉 **Investimento Non Raccomandato**")
+            st.write("• Rendimenti insufficienti per i rischi")
+    
+    # Disclaimer semplificato
+    st.info("""
+    **📝 Nota:** Questo calcolo è basato su assunzioni semplificate. I mercati immobiliari reali sono influenzati da 
+    numerosi fattori non considerati (domanda/offerta locale, normative, condizioni economiche, ecc.). 
+    Consulta sempre un consulente finanziario prima di investire.
+    """)
