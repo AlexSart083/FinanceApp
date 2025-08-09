@@ -87,7 +87,7 @@ def render_compound_interest_section():
                     recurring_investment, inflation_rate, recurring_frequency
                 )
                 display_compound_interest_results_with_inflation(
-                    results, interest_rate_annual, inflation_rate, investment_years
+                    results, interest_rate_annual, inflation_rate, investment_years, recurring_frequency
                 )
             except Exception as e:
                 st.error("Errore nel calcolo. Verifica i valori inseriti.")
@@ -188,25 +188,27 @@ def calculate_compound_interest_with_inflation(initial_investment, interest_rate
     }
 
 def calculate_compound_interest_monthly(initial_investment, interest_rate_annual, investment_years, monthly_investment_annual=0):
-    """Calculate future value with compound interest for monthly recurring investments"""
+    """Calculate future value with compound interest for monthly recurring investments and monthly compounding"""
     
-    # Converti parametri
+    # Converti parametri - CORRETTO: tasso mensile con capitalizzazione mensile
     monthly_rate = (interest_rate_annual / 100) / 12
     total_months = investment_years * 12
     monthly_investment = monthly_investment_annual / 12 if monthly_investment_annual > 0 else 0
     
-    # Future Value del capitale iniziale
+    # Future Value del capitale iniziale con capitalizzazione mensile
     fv_initial = initial_investment * (1 + monthly_rate) ** total_months
     
     # Future Value degli investimenti mensili ricorrenti
-    if monthly_investment > 0 and monthly_rate != 0:
-        # Formula per annuity future value con capitalizzazione mensile
-        fv_recurring = monthly_investment * (((1 + monthly_rate) ** total_months - 1) / monthly_rate)
-    elif monthly_investment > 0 and monthly_rate == 0:
-        # Se il tasso è 0, somma semplice
-        fv_recurring = monthly_investment * total_months
-    else:
-        fv_recurring = 0
+    # Ogni investimento mensile viene capitalizzato per il numero di mesi rimanenti
+    fv_recurring = 0
+    if monthly_investment > 0:
+        for month in range(total_months):
+            # Ogni investimento mensile viene capitalizzato per (total_months - month - 1) mesi
+            months_to_compound = total_months - month
+            if monthly_rate != 0:
+                fv_recurring += monthly_investment * (1 + monthly_rate) ** (months_to_compound - 1)
+            else:
+                fv_recurring += monthly_investment
     
     # Totali
     total_future_value = fv_initial + fv_recurring
@@ -236,9 +238,15 @@ def calculate_cagr_metrics(initial_capital, final_capital, investment_years):
         'investment_years': investment_years
     }
 
-def display_compound_interest_results_with_inflation(results, interest_rate_annual, inflation_rate, investment_years):
+def display_compound_interest_results_with_inflation(results, interest_rate_annual, inflation_rate, investment_years, frequency="Annuale"):
     """Display compound interest results with inflation analysis"""
     st.success("**🎯 Risultati Interesse Composto con Analisi Inflazione**")
+    
+    # Mostra il tipo di capitalizzazione
+    if frequency == "Mensile":
+        st.info("📅 **Capitalizzazione MENSILE** - Gli interessi vengono reinvestiti ogni mese")
+    else:
+        st.info("📅 **Capitalizzazione ANNUALE** - Gli interessi vengono reinvestiti ogni anno")
     
     # Create main results layout
     res_col1, res_col2, res_col3 = st.columns(3)
@@ -284,7 +292,7 @@ def display_compound_interest_results_with_inflation(results, interest_rate_annu
         else:
             st.success("✅ Rendimento reale positivo")
     
-    # Additional analysis
+    # Additional analysis with frequency comparison
     st.write("**📈 Analisi Dettagliata:**")
     analysis_col1, analysis_col2 = st.columns(2)
     
@@ -296,11 +304,21 @@ def display_compound_interest_results_with_inflation(results, interest_rate_annu
         difference = results['nominal_results']['total_future_value'] - results['real_results']['total_future_value']
         st.write(f"• **Differenza: {format_currency(difference)}**")
         
-        # Frequency information
-        if results['frequency'] == "Mensile":
-            st.info("📅 Calcolo con investimenti mensili")
+        # Frequency information with comparison
+        if frequency == "Mensile":
+            st.success("📅 **Capitalizzazione Mensile:** Maggior effetto compounding")
+            # Calculate what it would be with annual compounding for comparison
+            annual_results = calculate_compound_interest(
+                results['nominal_results']['total_invested'] - (results['nominal_results']['total_invested'] - results['nominal_results']['fv_initial']),
+                interest_rate_annual, 
+                investment_years, 
+                (results['nominal_results']['total_invested'] - results['nominal_results']['fv_initial']) if results['nominal_results']['total_invested'] > results['nominal_results']['fv_initial'] else 0
+            )
+            if annual_results['total_future_value'] != results['nominal_results']['total_future_value']:
+                advantage = results['nominal_results']['total_future_value'] - annual_results['total_future_value']
+                st.info(f"💰 Vantaggio vs Annuale: {format_currency(advantage)}")
         else:
-            st.info("📅 Calcolo con investimenti annuali")
+            st.info("📅 **Capitalizzazione Annuale:** Standard per investimenti")
     
     with analysis_col2:
         st.write("**🎯 Raccomandazioni:**")
@@ -321,6 +339,10 @@ def display_compound_interest_results_with_inflation(results, interest_rate_annu
             st.warning("⚠️ Margine inflazione ridotto: monitora l'evoluzione dei tassi")
         else:
             st.success("✅ Buon margine contro l'inflazione")
+        
+        # Frequency recommendation
+        if frequency == "Annuale":
+            st.info("💡 Considera investimenti mensili per maggior compounding")
 
 def display_cagr_results(results):
     """Display CAGR calculation results"""
