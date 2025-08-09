@@ -215,7 +215,7 @@ def calculate_compound_interest_monthly(initial_investment, interest_rate_annual
     # Converti parametri - CORRETTO: tasso mensile con capitalizzazione mensile
     monthly_rate = (interest_rate_annual / 100) / 12
     total_months = investment_years * 12
-    monthly_investment = monthly_investment_annual / 12 if monthly_investment_annual > 0 else 0
+    monthly_investment = monthly_investment_annual if monthly_investment_annual > 0 else 0
     
     # Future Value del capitale iniziale con capitalizzazione mensile
     fv_initial = initial_investment * (1 + monthly_rate) ** total_months
