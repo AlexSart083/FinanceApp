@@ -39,38 +39,22 @@ def render_compound_interest_section():
         
         with col2:
             st.write("**🔄 Investimenti Ricorrenti**")
+            recurring_investment = st.number_input(
+                "Investimento Ricorrente Annuo (€)", 
+                min_value=0.00, 
+                value=1200.00,
+                step=100.00,
+                key="compound_recurring",
+                help="Importo investito ogni anno in aggiunta al capitale iniziale"
+            )
+            
             recurring_frequency = st.selectbox(
                 "Frequenza Investimenti Ricorrenti",
                 ["Annuale", "Mensile"],
                 index=0,
                 key="compound_frequency",
-                help="Scegli se effettuare investimenti ricorrenti ogni mese o ogni anno"
+                help="Frequenza con cui vengono effettuati gli investimenti ricorrenti"
             )
-            
-            if recurring_frequency == "Mensile":
-                recurring_investment = st.number_input(
-                    "Investimento Ricorrente Mensile (€)", 
-                    min_value=0.00, 
-                    value=100.00,
-                    step=10.00,
-                    key="compound_recurring",
-                    help="Importo investito ogni mese in aggiunta al capitale iniziale"
-                )
-                # Mostra l'equivalente annuale per chiarezza
-                annual_equivalent = recurring_investment * 12
-                st.info(f"💡 Equivalente annuale: {format_currency(annual_equivalent)}")
-            else:
-                recurring_investment = st.number_input(
-                    "Investimento Ricorrente Annuale (€)", 
-                    min_value=0.00, 
-                    value=1200.00,
-                    step=100.00,
-                    key="compound_recurring",
-                    help="Importo investito ogni anno in aggiunta al capitale iniziale"
-                )
-                # Mostra l'equivalente mensile per chiarezza
-                monthly_equivalent = recurring_investment / 12
-                st.info(f"💡 Equivalente mensile: {format_currency(monthly_equivalent)}")
         
         with col3:
             st.write("**📊 Parametri Economici**")
@@ -103,7 +87,7 @@ def render_compound_interest_section():
                     recurring_investment, inflation_rate, recurring_frequency
                 )
                 display_compound_interest_results_with_inflation(
-                    results, interest_rate_annual, inflation_rate, investment_years, recurring_frequency
+                    results, interest_rate_annual, inflation_rate, investment_years
                 )
             except Exception as e:
                 st.error("Errore nel calcolo. Verifica i valori inseriti.")
@@ -160,29 +144,25 @@ def calculate_compound_interest_with_inflation(initial_investment, interest_rate
                                              inflation_rate=2.0, frequency="Annuale"):
     """Calculate future value with compound interest, recurring investments and inflation analysis"""
     
-    # Normalizza l'investimento ricorrente a base annuale per i calcoli
+    # Calcoli nominali (senza considerare inflazione)
     if frequency == "Mensile":
-        # Se l'input è mensile, convertiamo a annuale per mantenere coerenza nei calcoli
-        recurring_investment_annual = recurring_investment * 12
         base_results = calculate_compound_interest_monthly(
-            initial_investment, interest_rate_annual, investment_years, recurring_investment_annual
+            initial_investment, interest_rate_annual, investment_years, recurring_investment
         )
     else:
-        # Se l'input è già annuale, usiamo direttamente
-        recurring_investment_annual = recurring_investment
         base_results = calculate_compound_interest(
-            initial_investment, interest_rate_annual, investment_years, recurring_investment_annual
+            initial_investment, interest_rate_annual, investment_years, recurring_investment
         )
     
     # Calcoli reali (considerando inflazione)
     real_interest_rate = interest_rate_annual - inflation_rate
     if frequency == "Mensile":
         real_results = calculate_compound_interest_monthly(
-            initial_investment, real_interest_rate, investment_years, recurring_investment_annual
+            initial_investment, real_interest_rate, investment_years, recurring_investment
         )
     else:
         real_results = calculate_compound_interest(
-            initial_investment, real_interest_rate, investment_years, recurring_investment_annual
+            initial_investment, real_interest_rate, investment_years, recurring_investment
         )
     
     # Calcolo del potere d'acquisto del valore futuro nominale
@@ -204,33 +184,29 @@ def calculate_compound_interest_with_inflation(initial_investment, interest_rate
         'equivalent_today_value': equivalent_today_value,
         'purchasing_power_loss': purchasing_power_loss,
         'inflation_rate': inflation_rate,
-        'frequency': frequency,
-        'recurring_investment_input': recurring_investment,
-        'recurring_investment_annual': recurring_investment_annual
+        'frequency': frequency
     }
 
 def calculate_compound_interest_monthly(initial_investment, interest_rate_annual, investment_years, monthly_investment_annual=0):
-    """Calculate future value with compound interest for monthly recurring investments and monthly compounding"""
+    """Calculate future value with compound interest for monthly recurring investments"""
     
-    # Converti parametri - CORRETTO: tasso mensile con capitalizzazione mensile
+    # Converti parametri
     monthly_rate = (interest_rate_annual / 100) / 12
     total_months = investment_years * 12
-    monthly_investment = monthly_investment_annual if monthly_investment_annual > 0 else 0
+    monthly_investment = monthly_investment_annual / 12 if monthly_investment_annual > 0 else 0
     
-    # Future Value del capitale iniziale con capitalizzazione mensile
+    # Future Value del capitale iniziale
     fv_initial = initial_investment * (1 + monthly_rate) ** total_months
     
     # Future Value degli investimenti mensili ricorrenti
-    # Ogni investimento mensile viene capitalizzato per il numero di mesi rimanenti
-    fv_recurring = 0
-    if monthly_investment > 0:
-        for month in range(total_months):
-            # Ogni investimento mensile viene capitalizzato per (total_months - month - 1) mesi
-            months_to_compound = total_months - month
-            if monthly_rate != 0:
-                fv_recurring += monthly_investment * (1 + monthly_rate) ** (months_to_compound - 1)
-            else:
-                fv_recurring += monthly_investment
+    if monthly_investment > 0 and monthly_rate != 0:
+        # Formula per annuity future value con capitalizzazione mensile
+        fv_recurring = monthly_investment * (((1 + monthly_rate) ** total_months - 1) / monthly_rate)
+    elif monthly_investment > 0 and monthly_rate == 0:
+        # Se il tasso è 0, somma semplice
+        fv_recurring = monthly_investment * total_months
+    else:
+        fv_recurring = 0
     
     # Totali
     total_future_value = fv_initial + fv_recurring
@@ -260,19 +236,9 @@ def calculate_cagr_metrics(initial_capital, final_capital, investment_years):
         'investment_years': investment_years
     }
 
-def display_compound_interest_results_with_inflation(results, interest_rate_annual, inflation_rate, investment_years, frequency="Annuale"):
+def display_compound_interest_results_with_inflation(results, interest_rate_annual, inflation_rate, investment_years):
     """Display compound interest results with inflation analysis"""
     st.success("**🎯 Risultati Interesse Composto con Analisi Inflazione**")
-    
-    # Mostra il tipo di capitalizzazione
-    if frequency == "Mensile":
-        st.info(f"📅 **Investimenti MENSILI** di {format_currency(results.get('recurring_investment_input', 0))} - Capitalizzazione mensile")
-        st.write(f"💡 Totale versamenti annuali: {format_currency(results.get('recurring_investment_annual', 0))}")
-    else:
-        st.info(f"📅 **Investimenti ANNUALI** di {format_currency(results.get('recurring_investment_input', 0))} - Capitalizzazione annuale")
-        if results.get('recurring_investment_input', 0) > 0:
-            monthly_equiv = results.get('recurring_investment_input', 0) / 12
-            st.write(f"💡 Equivalente mensile: {format_currency(monthly_equiv)}")
     
     # Create main results layout
     res_col1, res_col2, res_col3 = st.columns(3)
@@ -318,7 +284,7 @@ def display_compound_interest_results_with_inflation(results, interest_rate_annu
         else:
             st.success("✅ Rendimento reale positivo")
     
-    # Additional analysis with frequency comparison
+    # Additional analysis
     st.write("**📈 Analisi Dettagliata:**")
     analysis_col1, analysis_col2 = st.columns(2)
     
@@ -330,33 +296,11 @@ def display_compound_interest_results_with_inflation(results, interest_rate_annu
         difference = results['nominal_results']['total_future_value'] - results['real_results']['total_future_value']
         st.write(f"• **Differenza: {format_currency(difference)}**")
         
-        # Frequency information with comparison
-        if frequency == "Mensile":
-            st.success("📅 **Versamenti Mensili:** Maggior effetto compounding")
-            st.write(f"• Versamento mensile: {format_currency(results.get('recurring_investment_input', 0))}")
-            st.write(f"• Totale annuale: {format_currency(results.get('recurring_investment_annual', 0))}")
-            
-            # Calculate what it would be with annual investments for comparison
-            if results.get('recurring_investment_annual', 0) > 0:
-                try:
-                    annual_results = calculate_compound_interest(
-                        results['nominal_results']['fv_initial'] / ((1 + interest_rate_annual/100) ** investment_years),
-                        interest_rate_annual, 
-                        investment_years, 
-                        results.get('recurring_investment_annual', 0)
-                    )
-                    advantage = results['nominal_results']['total_future_value'] - annual_results['total_future_value']
-                    if advantage > 0:
-                        st.success(f"💰 **Vantaggio versamenti mensili: {format_currency(advantage)}**")
-                except:
-                    pass
+        # Frequency information
+        if results['frequency'] == "Mensile":
+            st.info("📅 Calcolo con investimenti mensili")
         else:
-            st.info("📅 **Versamenti Annuali:** Investimento una volta l'anno")
-            st.write(f"• Versamento annuale: {format_currency(results.get('recurring_investment_input', 0))}")
-            if results.get('recurring_investment_input', 0) > 0:
-                monthly_equiv = results.get('recurring_investment_input', 0) / 12
-                st.write(f"• Equivalente mensile: {format_currency(monthly_equiv)}")
-                st.info("💡 **Suggerimento:** Prova versamenti mensili per maggior compounding!")
+            st.info("📅 Calcolo con investimenti annuali")
     
     with analysis_col2:
         st.write("**🎯 Raccomandazioni:**")
@@ -377,10 +321,6 @@ def display_compound_interest_results_with_inflation(results, interest_rate_annu
             st.warning("⚠️ Margine inflazione ridotto: monitora l'evoluzione dei tassi")
         else:
             st.success("✅ Buon margine contro l'inflazione")
-        
-        # Frequency recommendation
-        if frequency == "Annuale":
-            st.info("💡 Considera investimenti mensili per maggior compounding")
 
 def display_cagr_results(results):
     """Display CAGR calculation results"""
